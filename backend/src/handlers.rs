@@ -8,7 +8,10 @@ use serde_json::{Value, json};
 use crate::{
     auth::create_jwt,
     middleware::AuthUser,
-    models::{CreateDocument, CreateUser, Document, LoginRequest, LoginResponse, UserResponse},
+    models::{
+        CreateDocument, CreateUser, Document, LoginRequest, LoginResponse, UpdateDocument,
+        UserResponse,
+    },
     state::{self, AppState},
 };
 
@@ -305,4 +308,92 @@ pub async fn delete_document(
     }
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn update_document(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+    Path(document_id): Path<uuid::Uuid>,
+    Json(payload): Json<UpdateDocument>,
+) -> Result<Json<Document>, (StatusCode, Json<Value>)> {
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    let existing = sqlx::query!(
+        "SELECT id FROM documents WHERE id = $1 AND user_id = $2",
+        document_id,
+        user_id
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Database error"})),
+        )
+    })?;
+
+    if existing.is_none() {
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "Document not found"})),
+        ));
+    }
+
+    let updated_document = sqlx::query_as!(
+        Document,
+        r#"
+        UPDATE documents
+        SET 
+            title = COALESCE($1, title),
+            authors = COALESCE($2, authors),
+            year = COALESCE($3, year),
+            publication_type = COALESCE($4, publication_type),
+            journal = COALESCE($5, journal),
+            volume = COALESCE($6, volume),
+            issue = COALESCE($7, issue),
+            pages = COALESCE($8, pages),
+            publisher = COALESCE($9, publisher),
+            doi = COALESCE($10, doi),
+            url = COALESCE($11, url),
+            abstract = COALESCE($12, abstract),
+            keywords = COALESCE($13, keywords),
+            pdf_url = COALESCE($14, pdf_url),
+            updated_at = NOW()
+        WHERE id = $15 AND user_id = $16
+        RETURNING id, user_id, title, authors, year, publication_type, journal,
+                  volume, issue, pages, publisher, doi, url, abstract as abstract_text,
+                  keywords, pdf_url, created_at, updated_at
+        "#,
+        payload.title,
+        payload.authors.as_deref(),
+        payload.year,
+        payload.publication_type,
+        payload.journal,
+        payload.volume,
+        payload.issue,
+        payload.pages,
+        payload.publisher,
+        payload.doi,
+        payload.url,
+        payload.abstract_text,
+        payload.keywords.as_deref(),
+        payload.pdf_url,
+        document_id,
+        user_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to update document"})),
+        )
+    })?;
+
+    Ok(Json(updated_document))
 }

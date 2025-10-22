@@ -1,7 +1,7 @@
 use crate::{handlers, state::AppState};
 use axum::{
     Router,
-    routing::{delete, get, post},
+    routing::{delete, get, post, put},
 };
 
 pub fn create_routes(state: AppState) -> Router {
@@ -13,6 +13,7 @@ pub fn create_routes(state: AppState) -> Router {
         .route("/api/documents", post(handlers::create_document))
         .route("/api/documents", get(handlers::get_user_documents))
         .route("/api/documents/{id}", get(handlers::get_document))
+        .route("/api/documents/{id}", put(handlers::update_document))
         .route("/api/documents/{id}", delete(handlers::delete_document))
         .with_state(state)
 }

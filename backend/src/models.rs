@@ -46,3 +46,62 @@ pub struct Claims {
     pub email: String,
     pub exp: usize, //expiration time
 }
+
+// Document models
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct Document {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub title: String,
+    pub authors: Option<Vec<String>>,
+    pub year: Option<i32>,
+    pub publication_type: Option<String>,
+    pub journal: Option<String>,
+    pub volume: Option<String>,
+    pub issue: Option<String>,
+    pub pages: Option<String>,
+    pub publisher: Option<String>,
+    pub doi: Option<String>,
+    pub url: Option<String>,
+    pub abstract_text: Option<String>, // 'abstract' is a Rust keyword, so we use abstract_text
+    pub keywords: Option<Vec<String>>,
+    pub pdf_url: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateDocument {
+    pub title: String,
+    pub authors: Option<Vec<String>>,
+    pub year: Option<i32>,
+    pub publication_type: Option<String>,
+    pub journal: Option<String>,
+    pub volume: Option<String>,
+    pub issue: Option<String>,
+    pub pages: Option<String>,
+    pub publisher: Option<String>,
+    pub doi: Option<String>,
+    pub url: Option<String>,
+    pub abstract_text: Option<String>,
+    pub keywords: Option<Vec<String>>,
+    pub pdf_url: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateDocument {
+    pub title: Option<String>,
+    pub authors: Option<Vec<String>>,
+    pub year: Option<i32>,
+    pub publication_type: Option<String>,
+    pub journal: Option<String>,
+    pub volume: Option<String>,
+    pub issue: Option<String>,
+    pub pages: Option<String>,
+    pub publisher: Option<String>,
+    pub doi: Option<String>,
+    pub url: Option<String>,
+    pub abstract_text: Option<String>,
+    pub keywords: Option<Vec<String>>,
+    pub pdf_url: Option<String>,
+}

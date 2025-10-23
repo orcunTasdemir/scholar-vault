@@ -3,7 +3,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 export interface User {
     id: string;
     email: string;
-    full_name: string | null;
+    username: string | null;
 }
 
 export interface LoginResponse {
@@ -43,11 +43,11 @@ class ApiClient {
         return headers
     }
     // Endpoints
-    async register(email: string, password: string, full_name?: string): Promise<User> {
+    async register(email: string, password: string, username?: string): Promise<User> {
         const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
             method: 'POST',
             headers: this.getHeaders(),
-            body: JSON.stringify({ email, password, full_name }),
+            body: JSON.stringify({ email, password, username }),
         });
 
         if (!response.ok) {

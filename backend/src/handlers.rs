@@ -37,13 +37,13 @@ pub async fn register_user(
     // Insert user
     let result = sqlx::query!(
         r#"
-        INSERT INTO users (email, password_hash, full_name)
+        INSERT INTO users (email, password_hash, username)
         VALUES ($1, $2, $3)
-        RETURNING id, email, full_name, created_at
+        RETURNING id, email, username, created_at
         "#,
         payload.email,
         password_hash,
-        payload.full_name
+        payload.username
     )
     .fetch_one(&state.db)
     .await;
@@ -54,7 +54,7 @@ pub async fn register_user(
             Json(json!({
                 "id": user.id,
                 "email": user.email,
-                "full_name": user.full_name,
+                "username": user.username,
                 "created_at": user.created_at
             })),
         )),
@@ -78,7 +78,7 @@ pub async fn login_user(
     // Find user
     let user = sqlx::query!(
         r#"
-        SELECT id, email, password_hash, full_name
+        SELECT id, email, password_hash, username
         FROM users
         WHERE email = $1
         "#,
@@ -130,7 +130,7 @@ pub async fn login_user(
             user: UserResponse {
                 id: user.id,
                 email: user.email,
-                full_name: user.full_name,
+                username: user.username,
             },
         }),
     ))

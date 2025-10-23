@@ -1,4 +1,4 @@
-use crate::{handlers, state::AppState};
+use crate::{handlers, handlers::upload_pdf, state::AppState};
 use axum::{
     Router,
     routing::{delete, get, post, put},
@@ -12,6 +12,7 @@ pub fn create_routes(state: AppState) -> Router {
         .route("/api/user/me", get(handlers::get_current_user))
         .route("/api/documents", post(handlers::create_document))
         .route("/api/documents", get(handlers::get_user_documents))
+        .route("/api/documents/upload", post(upload_pdf))
         .route("/api/documents/{id}", get(handlers::get_document))
         .route("/api/documents/{id}", put(handlers::update_document))
         .route("/api/documents/{id}", delete(handlers::delete_document))

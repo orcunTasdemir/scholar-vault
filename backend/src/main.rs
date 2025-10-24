@@ -1,3 +1,4 @@
+mod ai;
 mod auth;
 mod config;
 mod handlers;
@@ -34,9 +35,7 @@ async fn main() {
         .nest_service("/uploads", ServeDir::new("uploads"))
         .layer(RequestBodyLimitLayer::new(50 * 1024 * 1024))
         .layer(cors);
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     println!("Server running on http://0.0.0.0:3000");
     println!("Health check: http://0.0.0.0:3000/health");
 

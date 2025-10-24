@@ -6,11 +6,13 @@ mod models;
 mod routes;
 mod state;
 
-use axum::{Router, routing::get};
 use config::Config;
 use routes::create_routes;
 use state::AppState;
+
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::limit::RequestBodyLimitLayer;
+use tower_http::services::ServeDir;
 
 #[tokio::main]
 async fn main() {
@@ -28,12 +30,15 @@ async fn main() {
         .allow_methods(Any)
         .allow_headers(Any);
 
-    let app = create_routes(app_state).layer(cors);
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
+    let app = create_routes(app_state)
+        .nest_service("/uploads", ServeDir::new("uploads"))
+        .layer(RequestBodyLimitLayer::new(50 * 1024 * 1024))
+        .layer(cors);
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
         .await
         .unwrap();
-    println!("Server running on http://127.0.0.1:3000");
-    println!("Health check: http://127.0.0.1:3000/health");
+    println!("Server running on http://0.0.0.0:3000");
+    println!("Health check: http://0.0.0.0:3000/health");
 
     axum::serve(listener, app).await.unwrap();
 }

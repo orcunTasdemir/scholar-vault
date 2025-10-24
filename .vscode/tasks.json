@@ -1,0 +1,55 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Docker: Start All Services",
+            "type": "shell",
+            "command": "docker-compose up --build",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Docker: Stop All Services",
+            "type": "shell",
+            "command": "docker-compose down",
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker: Rebuild and Start",
+            "type": "shell",
+            "command": "docker-compose down && docker-compose up --build",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Dev: Start Backend (Local)",
+            "type": "shell",
+            "command": "cd backend && cargo run",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Dev: Start Frontend (Local)",
+            "type": "shell",
+            "command": "cd frontend && npm run dev",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        }
+    ]
+}

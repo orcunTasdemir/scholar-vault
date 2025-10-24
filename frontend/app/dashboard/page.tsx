@@ -161,7 +161,8 @@ export default function DashboardPage() {
               {documents.map((doc) => (
                 <div
                   key={doc.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50"
+                  onClick={() => router.push(`/dashboard/documents/${doc.id}`)}
+                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
                 >
                   <h3 className="font-medium text-gray-900">{doc.title}</h3>
                   <p className="text-sm text-gray-500 mt-1">

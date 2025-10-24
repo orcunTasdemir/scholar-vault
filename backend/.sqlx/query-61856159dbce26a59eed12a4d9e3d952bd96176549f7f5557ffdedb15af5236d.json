@@ -1,0 +1,138 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO documents (\n            user_id, title, authors, year, publication_type, journal,\n            volume, issue, pages, publisher, doi, url, abstract_text, keywords, pdf_url\n        )\n        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)\n        RETURNING id, user_id, title, authors, year, publication_type, journal,\n                  volume, issue, pages, publisher, doi, url, abstract_text,\n                  keywords, pdf_url, created_at, updated_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "authors",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 4,
+        "name": "year",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "publication_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "journal",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "volume",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "issue",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "pages",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "publisher",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "doi",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "abstract_text",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 14,
+        "name": "keywords",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 15,
+        "name": "pdf_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 16,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 17,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        "TextArray",
+        "Int4",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Text",
+        "Text",
+        "TextArray",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "61856159dbce26a59eed12a4d9e3d952bd96176549f7f5557ffdedb15af5236d"
+}

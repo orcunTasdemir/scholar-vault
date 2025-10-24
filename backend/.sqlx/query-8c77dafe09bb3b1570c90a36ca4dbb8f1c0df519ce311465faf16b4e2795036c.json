@@ -1,0 +1,139 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE documents\n        SET \n            title = COALESCE($1, title),\n            authors = COALESCE($2, authors),\n            year = COALESCE($3, year),\n            publication_type = COALESCE($4, publication_type),\n            journal = COALESCE($5, journal),\n            volume = COALESCE($6, volume),\n            issue = COALESCE($7, issue),\n            pages = COALESCE($8, pages),\n            publisher = COALESCE($9, publisher),\n            doi = COALESCE($10, doi),\n            url = COALESCE($11, url),\n            abstract_text = COALESCE($12, abstract_text),\n            keywords = COALESCE($13, keywords),\n            pdf_url = COALESCE($14, pdf_url),\n            updated_at = NOW()\n        WHERE id = $15 AND user_id = $16\n        RETURNING id, user_id, title, authors, year, publication_type, journal,\n                  volume, issue, pages, publisher, doi, url, abstract_text,\n                  keywords, pdf_url, created_at, updated_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "authors",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 4,
+        "name": "year",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "publication_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "journal",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "volume",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "issue",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "pages",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "publisher",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "doi",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "abstract_text",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 14,
+        "name": "keywords",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 15,
+        "name": "pdf_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 16,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 17,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "TextArray",
+        "Int4",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Text",
+        "Text",
+        "TextArray",
+        "Text",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "8c77dafe09bb3b1570c90a36ca4dbb8f1c0df519ce311465faf16b4e2795036c"
+}

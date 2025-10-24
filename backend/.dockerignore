@@ -1,0 +1,26 @@
+# Git
+.git
+.gitignore
+
+# Rust build artifacts
+target/
+**/*.rs.bk
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Local uploads (will be mounted as volume)
+uploads/
+
+# Documentation
+README.md
+*.md
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log

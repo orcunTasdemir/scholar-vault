@@ -156,42 +156,8 @@ pub async fn create_document(
         )
     })?;
 
-    let document = sqlx::query_as!(
-        Document,
-        r#"
-        INSERT INTO documents (
-            user_id, title, authors, year, publication_type, journal,
-            volume, issue, pages, publisher, doi, url, abstract_text, keywords, pdf_url
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-        RETURNING id, user_id, title, authors, year, publication_type, journal,
-                  volume, issue, pages, publisher, doi, url, abstract_text,
-                  keywords, pdf_url, created_at, updated_at
-        "#,
-        user_id,
-        payload.title,
-        payload.authors.as_deref(),
-        payload.year,
-        payload.publication_type,
-        payload.journal,
-        payload.volume,
-        payload.issue,
-        payload.pages,
-        payload.publisher,
-        payload.doi,
-        payload.url,
-        payload.abstract_text,
-        payload.keywords.as_deref(),
-        payload.pdf_url
-    )
-    .fetch_one(&state.db)
-    .await
-    .map_err(|_| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"error": "Failed to create document"})),
-        )
-    })?;
+    let document = create_document_internal(&state, user_id, payload).await?;
+
     Ok((StatusCode::CREATED, Json(document)))
 }
 
@@ -621,4 +587,55 @@ pub async fn upload_pdf(
 //     })?;
 
 //     Ok((StatusCode::CREATED, Json(json!(document))))
+// }
+
+// pub async fn create_document(   // OLD
+//     AuthUser(claims): AuthUser,
+//     State(state): State<AppState>,
+//     Json(payload): Json<CreateDocument>,
+// ) -> Result<(StatusCode, Json<Document>), (StatusCode, Json<Value>)> {
+//     let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+//         (
+//             StatusCode::BAD_REQUEST,
+//             Json(json!({"error":"Invalid user ID"})),
+//         )
+//     })?;
+
+//     let document = sqlx::query_as!(
+//         Document,
+//         r#"
+//         INSERT INTO documents (
+//             user_id, title, authors, year, publication_type, journal,
+//             volume, issue, pages, publisher, doi, url, abstract_text, keywords, pdf_url
+//         )
+//         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+//         RETURNING id, user_id, title, authors, year, publication_type, journal,
+//                   volume, issue, pages, publisher, doi, url, abstract_text,
+//                   keywords, pdf_url, created_at, updated_at
+//         "#,
+//         user_id,
+//         payload.title,
+//         payload.authors.as_deref(),
+//         payload.year,
+//         payload.publication_type,
+//         payload.journal,
+//         payload.volume,
+//         payload.issue,
+//         payload.pages,
+//         payload.publisher,
+//         payload.doi,
+//         payload.url,
+//         payload.abstract_text,
+//         payload.keywords.as_deref(),
+//         payload.pdf_url
+//     )
+//     .fetch_one(&state.db)
+//     .await
+//     .map_err(|_| {
+//         (
+//             StatusCode::INTERNAL_SERVER_ERROR,
+//             Json(json!({"error": "Failed to create document"})),
+//         )
+//     })?;
+//     Ok((StatusCode::CREATED, Json(document)))
 // }

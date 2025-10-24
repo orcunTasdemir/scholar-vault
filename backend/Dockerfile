@@ -6,20 +6,11 @@ WORKDIR /app
 # Install sqlx-cli for migrations
 RUN cargo install sqlx-cli --no-default-features --features postgres
 
-# Copy manifests first (for better layer caching)
-COPY Cargo.toml Cargo.lock ./
+# Copy everything
+COPY . .
 
-# Create dummy source to cache dependencies
-RUN mkdir src && echo "fn main() {}" > src/main.rs
-RUN cargo build --release || true
-RUN rm -rf src
-
-# Copy actual source code
-COPY src ./src
-COPY migrations ./migrations
-COPY .sqlx ./.sqlx
-
-# Build app
+# Build with SQLx offline mode
+ENV SQLX_OFFLINE=true
 RUN cargo build --release
 
 # Runtime stage

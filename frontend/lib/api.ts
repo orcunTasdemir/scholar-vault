@@ -118,6 +118,31 @@ class ApiClient {
             throw new Error('Failed to delete document');
         }
     }
+
+    async getDocument(token: string, documentId: string): Promise<Document> {
+        const response = await fetch(`${API_BASE_URL}/api/documents/${documentId}`, {
+            headers: this.getHeaders(token),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch document');
+        }
+        return response.json();
+    }
+
+    async updateDocument(token: string, documentId: string, updates: Partial<Document>): Promise<Document> {
+        const response = await fetch(`${API_BASE_URL}/api/documents/${documentId}`, {
+            method: 'PUT',
+            headers: this.getHeaders(token),
+            body: JSON.stringify(updates),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to update document');
+        }
+        return response.json();
+    }
 }
 
 export const api = new ApiClient();

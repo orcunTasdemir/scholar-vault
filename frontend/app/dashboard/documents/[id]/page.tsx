@@ -161,9 +161,19 @@ export default function DocumentDetailPage() {
             </div>
           )}
 
-          {/* PDF Download Button */}
-          {document.pdf_url && (
-            <div className="mt-6">
+          {/* Action Buttons */}
+          <div className="mt-6 flex gap-4">
+            <button
+              onClick={() =>
+                router.push(`/dashboard/documents/${documentId}/edit`)
+              }
+              className="inline-block px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            >
+              Edit Document
+            </button>
+
+            {/* PDF Download Button */}
+            {document.pdf_url && (
               <a
                 href={`${API_BASE_URL}/${document.pdf_url}`}
                 target="_blank"
@@ -172,8 +182,8 @@ export default function DocumentDetailPage() {
               >
                 View PDF
               </a>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </main>
     </div>

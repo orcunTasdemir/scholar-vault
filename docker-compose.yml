@@ -35,12 +35,15 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev # We'll create this
     container_name: scholarvault-frontend
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:3000
     ports:
       - "3001:3001"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       - backend
 

@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, Document } from "@/lib/api";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+import Image from "next/image";
 
 export default function DocumentDetailPage() {
   const params = useParams();
@@ -70,11 +71,21 @@ export default function DocumentDetailPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
             onClick={() => router.push("/dashboard")}
-            className="text-blue-600 hover:text-blue-800 mb-2"
+            className="text-blue-600 hover:text-blue-800 mb-2 flex items-center gap-1"
           >
             ← Back to Dashboard
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">{document.title}</h1>
+          <div className="flex items-center gap-3">
+            <Image
+              src="/logo.png"
+              alt="ScholarVault Logo"
+              width={40}
+              height={40}
+            />
+            <h1 className="text-2xl font-bold text-gray-900">
+              {document.title}
+            </h1>
+          </div>
         </div>
       </header>
 
@@ -178,7 +189,7 @@ export default function DocumentDetailPage() {
               <>
                 <button
                   onClick={() => setShowPDF(!showPDF)}
-                  className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-100"
+                  className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   {showPDF ? "Hide PDF" : "Show PDF"}
                 </button>

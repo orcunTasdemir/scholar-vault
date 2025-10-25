@@ -11,6 +11,7 @@ use config::Config;
 use routes::create_routes;
 use state::AppState;
 
+use axum::extract::DefaultBodyLimit;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::services::ServeDir;
@@ -33,7 +34,7 @@ async fn main() {
 
     let app = create_routes(app_state)
         .nest_service("/uploads", ServeDir::new("uploads"))
-        .layer(RequestBodyLimitLayer::new(50 * 1024 * 1024))
+        .layer(DefaultBodyLimit::max(100 * 1024 * 1024)) // 100MB for multipart
         .layer(cors);
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     println!("Server running on http://0.0.0.0:3000");

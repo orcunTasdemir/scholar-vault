@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, Document } from "@/lib/api";
+import Image from "next/image";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -75,7 +76,11 @@ export default function DashboardPage() {
         }
       );
       if (!response.ok) {
-        throw new Error("Upload failed");
+        // Try to get the error message from the response
+        const errorData = await response.json().catch(() => null);
+        const errorMessage =
+          errorData?.error || `Upload failed with status ${response.status}`;
+        throw new Error(errorMessage);
       }
       const newDocument = await response.json();
       setDocuments((prev) => [...prev, newDocument]);
@@ -83,6 +88,7 @@ export default function DashboardPage() {
       // Reset
       event.target.value = "";
     } catch (error) {
+      console.error("Upload error:", error);
       setUploadError(
         error instanceof Error ? error.message : "Failed to upload PDF"
       );
@@ -95,12 +101,21 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 ls:px-8 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">ScholarVault</h1>
-            <p className="text-sm text-gray-600">
-              Welcome back, {user.username}
-            </p>
+          <div className="flex items-center gap-3">
+            <Image
+              src="/logo.png"
+              alt="ScholarVault Logo"
+              width={48}
+              height={48}
+            />
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">ScholarVault</h1>
+              <p className="text-sm text-gray-600">
+                Welcome back, {user.username}
+              </p>
+            </div>
           </div>
+
           <button
             onClick={handleLogout}
             className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
@@ -116,8 +131,8 @@ export default function DashboardPage() {
             <h2 className="text-xl font-semibold text-gray-900">
               My Documents
             </h2>
-            <label className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer inline-block">
-              {isUploading ? "Uploading..." : "+ Upload PDF"}
+            <label className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer inline-block transition-colors shadow-sm hover:shadow">
+              {isUploading ? "⏳ Uploading..." : "📤 Upload PDF"}
               <input
                 type="file"
                 accept=".pdf"
@@ -135,25 +150,22 @@ export default function DashboardPage() {
           )}
 
           {documents.length === 0 ? (
-            <div className="text-center py-12">
-              <svg
-                className="mx-auto h-12 w-12 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
+            <div className="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+              <Image
+                src="/logo.png"
+                alt="No documents"
+                width={64}
+                height={64}
+                className="mx-auto opacity-50"
+              />
+              <h3 className="mt-4 text-lg font-semibold text-gray-900">
                 No documents yet
               </h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-gray-600">
                 Get started by uploading your first research document.
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                We&apos;ll automatically extract metadata from your PDFs!
               </p>
             </div>
           ) : (
@@ -162,12 +174,23 @@ export default function DashboardPage() {
                 <div
                   key={doc.id}
                   onClick={() => router.push(`/dashboard/documents/${doc.id}`)}
-                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 cursor-pointer transition-all bg-white"
                 >
-                  <h3 className="font-medium text-gray-900">{doc.title}</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Uploaded: {new Date(doc.created_at).toLocaleDateString()}
-                  </p>
+                  <h3 className="font-semibold text-gray-900">{doc.title}</h3>
+                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                    <span>
+                      📅 {new Date(doc.created_at).toLocaleDateString()}
+                    </span>
+                    {doc.authors && doc.authors.length > 0 && (
+                      <span>
+                        👤 {doc.authors[0]}
+                        {doc.authors.length > 1
+                          ? ` +${doc.authors.length - 1}`
+                          : ""}
+                      </span>
+                    )}
+                    {doc.year && <span>🗓️ {doc.year}</span>}
+                  </div>
                 </div>
               ))}
             </div>

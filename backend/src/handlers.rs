@@ -479,7 +479,7 @@ pub async fn upload_pdf(
 
     let (title, authors, year, journal, doi, abstract_text) = match metadata {
         Ok(meta) => {
-            println!("AI extraction successful!");
+            println!("Metadata extraction successful!");
             (
                 meta.title.unwrap_or(file_name.clone()),
                 meta.authors,

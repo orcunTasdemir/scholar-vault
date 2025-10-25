@@ -4,6 +4,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import Image from "next/image";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -34,9 +35,18 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">
-            Create your account
-          </h2>
+          <div className="flex flex-col items-center gap-4">
+            <Image
+              src="/logo.png"
+              alt="ScholarVault Logo"
+              width={80}
+              height={80}
+              priority
+            />
+            <h2 className="text-3xl font-bold text-gray-900">
+              Create your account
+            </h2>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">

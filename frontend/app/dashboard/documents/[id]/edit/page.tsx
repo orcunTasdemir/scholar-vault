@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, Document } from "@/lib/api";
+import Image from "next/image";
 
 export default function EditDocumentPage() {
   const params = useParams();
@@ -166,7 +167,15 @@ export default function EditDocumentPage() {
           >
             ← Back to Document
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Edit Document</h1>
+          <div className="flex items-center gap-3">
+            <Image
+              src="/logo.png"
+              alt="ScholarVault Logo"
+              width={40}
+              height={40}
+            />
+            <h1 className="text-2xl font-bold text-gray-900">Edit Document</h1>
+          </div>
         </div>
       </header>
 

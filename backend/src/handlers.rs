@@ -473,25 +473,42 @@ pub async fn upload_pdf(
 
     let file_name = file_name.unwrap_or_else(|| "unknown.pdf".to_string());
 
-    // TODO: AI metadata extraction will go here
-    // - Extract text from PDF
-    // - Use GPT-4/Claude to extract: title, authors, abstract, DOI, year, etc.
-    // - Optionally lookup DOI via Crossref API for validation/enrichment
+    // TODO: AI metadata extraction
+
+    let metadata = crate::ai::extract_metadata_from_pdf(&file_path).await;
+
+    let (title, authors, year, journal, doi, abstract_text) = match metadata {
+        Ok(meta) => {
+            println!("AI extraction successful!");
+            (
+                meta.title.unwrap_or(file_name.clone()),
+                meta.authors,
+                meta.year,
+                meta.journal,
+                meta.doi,
+                meta.abstract_text,
+            )
+        }
+        Err(e) => {
+            eprintln!("AI extraction failed: {}. Using filename as fallback.", e);
+            (file_name.clone(), None, None, None, None, None)
+        }
+    };
 
     // Create document using internal helper
     let payload = CreateDocument {
-        title: file_name,
-        authors: None,
-        year: None,
+        title,
+        authors,
+        year,
         publication_type: None,
-        journal: None,
+        journal,
         volume: None,
         issue: None,
         pages: None,
         publisher: None,
-        doi: None,
+        doi,
         url: None,
-        abstract_text: None,
+        abstract_text,
         keywords: None,
         pdf_url: Some(file_path),
     };
@@ -500,142 +517,3 @@ pub async fn upload_pdf(
 
     Ok((StatusCode::CREATED, Json(json!(document))))
 }
-
-// pub async fn upload_pdf(  // OLD
-//     AuthUser(claims): AuthUser,
-//     State(state): State<AppState>,
-//     mut multipart: axum::extract::Multipart,
-// ) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
-//     let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
-//         (
-//             StatusCode::INTERNAL_SERVER_ERROR,
-//             Json(json!({"error": "Invalid user ID"})),
-//         )
-//     })?;
-//     // Extract the field from multipart
-//     let mut file_name: Option<String> = None;
-//     let mut file_path: Option<String> = None;
-
-//     while let Some(field) = multipart.next_field().await.map_err(|e| {
-//         (
-//             StatusCode::BAD_REQUEST,
-//             Json(json!({"error": format!("Failed to read multipart field: {}", e)})),
-//         )
-//     })? {
-//         let name = field.name().unwrap_or("").to_string();
-
-//         if name == "file" {
-//             let original_filename = field.file_name().unwrap_or("unknown.pdf").to_string();
-
-//             // Unique filename
-//             let file_id = uuid::Uuid::new_v4();
-//             let stored_filename = format!("{}_{}", file_id, original_filename);
-//             let upload_path = format!("uploads/{}", stored_filename);
-
-//             // Read file
-//             let data = field.bytes().await.map_err(|e| {
-//                 (
-//                     StatusCode::BAD_REQUEST,
-//                     Json(json!({"error": format!("Failed to read file data: {}", e)})),
-//                 )
-//             })?;
-
-//             // Write to disk
-//             tokio::fs::write(&upload_path, &data).await.map_err(|e| {
-//                 (
-//                     StatusCode::INTERNAL_SERVER_ERROR,
-//                     Json(json!({"error": format!("Failed to save file: {}", e)})),
-//                 )
-//             })?;
-
-//             file_name = Some(original_filename);
-//             file_path = Some(upload_path);
-//             break;
-//         }
-//     }
-
-//     let file_path = file_path.ok_or_else(|| {
-//         (
-//             StatusCode::BAD_REQUEST,
-//             Json(json!({"error": "No file provided"})),
-//         )
-//     })?;
-
-//     let file_name = file_name.unwrap_or_else(|| "unknown.pdf".to_string());
-
-//     // Create record
-//     let document = sqlx::query_as!(
-//         Document,
-//         r#"
-//         INSERT INTO documents (user_id, title, pdf_url)
-//         VALUES ($1, $2, $3)
-//         RETURNING
-//             id, user_id, title, authors, year, publication_type,
-//             journal, volume, issue, pages, publisher, doi, url, abstract_text, keywords, pdf_url, created_at, updated_at
-//         "#,
-//         user_id,
-//         file_name,
-//         file_path
-//     )
-//     .fetch_one(&state.db)
-//     .await
-//     .map_err(|e| {
-//         (
-//             StatusCode::INTERNAL_SERVER_ERROR,
-//             Json(json!({"error": format!("Failed to create document: {}", e)})),
-//         )
-//     })?;
-
-//     Ok((StatusCode::CREATED, Json(json!(document))))
-// }
-
-// pub async fn create_document(   // OLD
-//     AuthUser(claims): AuthUser,
-//     State(state): State<AppState>,
-//     Json(payload): Json<CreateDocument>,
-// ) -> Result<(StatusCode, Json<Document>), (StatusCode, Json<Value>)> {
-//     let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
-//         (
-//             StatusCode::BAD_REQUEST,
-//             Json(json!({"error":"Invalid user ID"})),
-//         )
-//     })?;
-
-//     let document = sqlx::query_as!(
-//         Document,
-//         r#"
-//         INSERT INTO documents (
-//             user_id, title, authors, year, publication_type, journal,
-//             volume, issue, pages, publisher, doi, url, abstract_text, keywords, pdf_url
-//         )
-//         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-//         RETURNING id, user_id, title, authors, year, publication_type, journal,
-//                   volume, issue, pages, publisher, doi, url, abstract_text,
-//                   keywords, pdf_url, created_at, updated_at
-//         "#,
-//         user_id,
-//         payload.title,
-//         payload.authors.as_deref(),
-//         payload.year,
-//         payload.publication_type,
-//         payload.journal,
-//         payload.volume,
-//         payload.issue,
-//         payload.pages,
-//         payload.publisher,
-//         payload.doi,
-//         payload.url,
-//         payload.abstract_text,
-//         payload.keywords.as_deref(),
-//         payload.pdf_url
-//     )
-//     .fetch_one(&state.db)
-//     .await
-//     .map_err(|_| {
-//         (
-//             StatusCode::INTERNAL_SERVER_ERROR,
-//             Json(json!({"error": "Failed to create document"})),
-//         )
-//     })?;
-//     Ok((StatusCode::CREATED, Json(document)))
-// }

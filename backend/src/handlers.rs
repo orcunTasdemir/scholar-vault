@@ -475,7 +475,7 @@ pub async fn upload_pdf(
 
     // TODO: AI metadata extraction
 
-    let metadata = crate::ai::extract_metadata_from_pdf(&file_path).await;
+    let metadata = crate::metadata::extract_metadata_from_pdf(&file_path).await;
 
     let (title, authors, year, journal, doi, abstract_text) = match metadata {
         Ok(meta) => {

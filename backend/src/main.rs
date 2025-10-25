@@ -1,7 +1,7 @@
-mod ai;
 mod auth;
 mod config;
 mod handlers;
+mod metadata;
 mod middleware;
 mod models;
 mod routes;

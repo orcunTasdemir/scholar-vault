@@ -475,45 +475,39 @@ pub async fn upload_pdf(
 
     // TODO: AI metadata extraction
 
-    let metadata = crate::metadata::extract_metadata_from_pdf(&file_path).await;
-
-    let (title, authors, year, journal, doi, abstract_text) = match metadata {
-        Ok(meta) => {
+    let mut metadata = match crate::metadata::extract_metadata_from_pdf(&file_path).await {
+        Ok(metadata) => {
             println!("Metadata extraction successful!");
-            (
-                meta.title.unwrap_or(file_name.clone()),
-                meta.authors,
-                meta.year,
-                meta.journal,
-                meta.doi,
-                meta.abstract_text,
-            )
+            metadata
         }
         Err(e) => {
-            eprintln!("AI extraction failed: {}. Using filename as fallback.", e);
-            (file_name.clone(), None, None, None, None, None)
+            eprintln!(
+                "Metadata extraction failed: {}. Using filename as fallback.",
+                e
+            );
+            CreateDocument {
+                title: file_name.clone(),
+                authors: None,
+                year: None,
+                publication_type: None,
+                journal: None,
+                volume: None,
+                issue: None,
+                pages: None,
+                publisher: None,
+                doi: None,
+                url: None,
+                abstract_text: None,
+                keywords: None,
+                pdf_url: None,
+            }
         }
     };
 
-    // Create document using internal helper
-    let payload = CreateDocument {
-        title,
-        authors,
-        year,
-        publication_type: None,
-        journal,
-        volume: None,
-        issue: None,
-        pages: None,
-        publisher: None,
-        doi,
-        url: None,
-        abstract_text,
-        keywords: None,
-        pdf_url: Some(file_path),
-    };
+    // Set the PDF path
+    metadata.pdf_url = Some(file_path);
 
-    let document = create_document_internal(&state, user_id, payload).await?;
+    let document = create_document_internal(&state, user_id, metadata).await?;
 
     Ok((StatusCode::CREATED, Json(json!(document))))
 }

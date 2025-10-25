@@ -1,3 +1,4 @@
+use crate::models::CreateDocument;
 use serde::{Deserialize, Serialize};
 use std::env;
 
@@ -49,6 +50,10 @@ struct CrossRefMessage {
     issue: Option<String>,
     page: Option<String>,
     publisher: Option<String>,
+    #[serde(rename = "type")]
+    publication_type: Option<String>,
+    #[serde(rename = "URL")]
+    url: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -63,41 +68,178 @@ struct CrossRefDate {
     date_parts: Option<Vec<Vec<i32>>>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ExtractedMetadata {
-    pub title: Option<String>,
-    pub authors: Option<Vec<String>>,
-    pub year: Option<i32>,
-    pub journal: Option<String>,
-    pub doi: Option<String>,
-    pub abstract_text: Option<String>,
-}
-
-pub async fn extract_metadata_from_pdf(pdf_path: &str) -> Result<ExtractedMetadata, String> {
+pub async fn extract_metadata_from_pdf(pdf_path: &str) -> Result<CreateDocument, String> {
     // Extract text from PDF
     let pdf_text = extract_text_from_pdf(pdf_path)?;
 
-    // Try to find DOI in the PDF text
+    let mut final_metadata = CreateDocument {
+        title: String::new(), // Will be filled, required field
+        authors: None,
+        year: None,
+        publication_type: None,
+        journal: None,
+        volume: None,
+        issue: None,
+        pages: None,
+        publisher: None,
+        doi: None,
+        url: None,
+        abstract_text: None,
+        keywords: None,
+        pdf_url: None, // Set later in handlers.rs
+    };
+
+    // Try finding doi
     if let Some(doi) = extract_doi_from_text(&pdf_text) {
         println!("Found DOI: {}", doi);
-        // Try crossref lookup
+        // try lookup
         match lookup_doi_metadata(&doi).await {
-            Ok(metadata) => {
+            Ok(crossref_metadata) => {
                 println!("CrossRef lookup successful");
-                return Ok(metadata);
+                // use whatever is returned
+                final_metadata = crossref_metadata;
+
+                // Check what's missing
+                let missing_fields = vec![
+                    if final_metadata.title.is_empty() {
+                        Some("title")
+                    } else {
+                        None
+                    },
+                    if final_metadata.authors.is_none() {
+                        Some("authors")
+                    } else {
+                        None
+                    },
+                    if final_metadata.year.is_none() {
+                        Some("year")
+                    } else {
+                        None
+                    },
+                    if final_metadata.journal.is_none() {
+                        Some("journal")
+                    } else {
+                        None
+                    },
+                    if final_metadata.publication_type.is_none() {
+                        Some("publication_type")
+                    } else {
+                        None
+                    },
+                    if final_metadata.volume.is_none() {
+                        Some("volume")
+                    } else {
+                        None
+                    },
+                    if final_metadata.issue.is_none() {
+                        Some("issue")
+                    } else {
+                        None
+                    },
+                    if final_metadata.pages.is_none() {
+                        Some("pages")
+                    } else {
+                        None
+                    },
+                    if final_metadata.publisher.is_none() {
+                        Some("publisher")
+                    } else {
+                        None
+                    },
+                    if final_metadata.url.is_none() {
+                        Some("url")
+                    } else {
+                        None
+                    },
+                    if final_metadata.abstract_text.is_none() {
+                        Some("abstract")
+                    } else {
+                        None
+                    },
+                    if final_metadata.keywords.is_none() {
+                        Some("keywords")
+                    } else {
+                        None
+                    },
+                ]
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>();
+
+                if !missing_fields.is_empty() {
+                    println!(
+                        "CrossRef missing fields: {:?}. Using AI to fill gaps...",
+                        missing_fields
+                    );
+
+                    // Run AI to get missing fields
+                    match analyze_with_openai(&pdf_text).await {
+                        Ok(ai_metadata) => {
+                            println!("AI extraction successful");
+                            // Fill in missing fields from AI
+                            if final_metadata.title.is_empty() {
+                                final_metadata.title = ai_metadata.title;
+                            }
+                            if final_metadata.authors.is_none() {
+                                final_metadata.authors = ai_metadata.authors;
+                            }
+                            if final_metadata.year.is_none() {
+                                final_metadata.year = ai_metadata.year;
+                            }
+                            if final_metadata.journal.is_none() {
+                                final_metadata.journal = ai_metadata.journal;
+                            }
+                            if final_metadata.publication_type.is_none() {
+                                final_metadata.publication_type = ai_metadata.publication_type;
+                            }
+                            if final_metadata.volume.is_none() {
+                                final_metadata.volume = ai_metadata.volume;
+                            }
+                            if final_metadata.issue.is_none() {
+                                final_metadata.issue = ai_metadata.issue;
+                            }
+                            if final_metadata.pages.is_none() {
+                                final_metadata.pages = ai_metadata.pages;
+                            }
+                            if final_metadata.publisher.is_none() {
+                                final_metadata.publisher = ai_metadata.publisher;
+                            }
+                            if final_metadata.url.is_none() {
+                                final_metadata.url = ai_metadata.url;
+                            }
+                            if final_metadata.abstract_text.is_none() {
+                                final_metadata.abstract_text = ai_metadata.abstract_text;
+                            }
+                            if final_metadata.keywords.is_none() {
+                                final_metadata.keywords = ai_metadata.keywords;
+                            }
+                            println!("Merged CrossRef + AI data for complete metadata");
+                        }
+                        Err(e) => {
+                            eprintln!(
+                                "AI extraction failed: {}. Using CrossRef data with gaps.",
+                                e
+                            );
+                        }
+                    }
+                } else {
+                    println!("CrossRef has complete metadata, no AI needed");
+                }
+
+                return Ok(final_metadata);
             }
             Err(e) => {
                 println!(
-                    "CrossRef lookup failed: {}. Falling back to metadata by AI-analysis.",
+                    "CrossRef lookup failed: {}. Falling back to full AI analysis.",
                     e
                 );
             }
         }
     } else {
-        print!("No DOI found in PDF. Using AI extraction.");
+        println!("No DOI found in PDF. Using AI extraction.");
     }
 
-    // Fallback to OpenAI for analysis
+    // Fallback to OpenAI for full analysis (when no DOI or CrossRef failed)
     let metadata = analyze_with_openai(&pdf_text).await?;
     Ok(metadata)
 }
@@ -126,7 +268,7 @@ fn extract_doi_from_text(text: &str) -> Option<String> {
     doi_pattern.find(text).map(|m| m.as_str().to_string())
 }
 
-async fn lookup_doi_metadata(doi: &str) -> Result<ExtractedMetadata, String> {
+async fn lookup_doi_metadata(doi: &str) -> Result<CreateDocument, String> {
     let url = format!("https://api.crossref.org/works/{}", doi);
 
     let client = reqwest::Client::new();
@@ -177,17 +319,25 @@ async fn lookup_doi_metadata(doi: &str) -> Result<ExtractedMetadata, String> {
     // Extract title
     let title = msg.title.and_then(|titles| titles.first().cloned());
 
-    Ok(ExtractedMetadata {
-        title: title,
+    Ok(CreateDocument {
+        title: title.unwrap_or_default(),
         authors: authors,
         year: year,
+        publication_type: msg.publication_type,
         journal: journal,
+        volume: msg.volume,
+        issue: msg.issue,
+        pages: msg.page,
+        publisher: msg.publisher,
         doi: Some(doi.to_string()),
+        url: msg.url,
         abstract_text: msg.abstract_text,
+        keywords: None, // CrossRef doesn't provide keywords
+        pdf_url: None,
     })
 }
 
-async fn analyze_with_openai(pdf_text: &str) -> Result<ExtractedMetadata, String> {
+async fn analyze_with_openai(pdf_text: &str) -> Result<CreateDocument, String> {
     let api_key = env::var("OPENAI_API_KEY").map_err(|_| "OPENAI_API_KEY not set".to_string())?;
 
     let prompt = format!(
@@ -201,12 +351,19 @@ Return JSON in this exact format:
   "title": "paper title",
   "authors": ["Author One", "Author Two"],
   "year": 2024,
+  "publication_type": "journal-article",
   "journal": "Journal Name",
+  "volume": "12",
+  "issue": "3",
+  "pages": "45-67",
+  "publisher": "Publisher Name",
   "doi": "10.xxxx/xxxxx",
-  "abstract_text": "abstract text"
+  "url": "https://doi.org/10.xxxx/xxxxx",
+  "abstract_text": "abstract text",
+  "keywords": ["keyword1", "keyword2", "keyword3"]
 }}
 
-If you cannot find a field, use null. Do not include any text before or after the JSON."#,
+If you cannot find a field, use null. The title field is required (use empty string if unknown). Do not include any text before or after the JSON."#,
         pdf_text
     );
 
@@ -243,7 +400,7 @@ If you cannot find a field, use null. Do not include any text before or after th
         .clone();
 
     // Parse the JSON response
-    let metadata: ExtractedMetadata = serde_json::from_str(&content)
+    let metadata: CreateDocument = serde_json::from_str(&content)
         .map_err(|e| format!("Failed to parse metadata JSON: {}. Content: {}", e, content))?;
 
     Ok(metadata)

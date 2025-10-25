@@ -97,6 +97,28 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDeleteDocument = async (
+    e: React.MouseEvent,
+    documentId: string
+  ) => {
+    e.stopPropagation(); // prevent click when deleting
+
+    if (!window.confirm("Are you sure you want to delete this document?")) {
+      return;
+    }
+
+    if (!token) return;
+
+    try {
+      await api.deleteDocument(token, documentId);
+      // remove from local state
+      setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Failed to delete document");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
@@ -173,23 +195,46 @@ export default function DashboardPage() {
               {documents.map((doc) => (
                 <div
                   key={doc.id}
-                  onClick={() => router.push(`/dashboard/documents/${doc.id}`)}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 cursor-pointer transition-all bg-white"
+                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 transition-all bg-white"
                 >
-                  <h3 className="font-semibold text-gray-900">{doc.title}</h3>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                    <span>
-                      📅 {new Date(doc.created_at).toLocaleDateString()}
-                    </span>
-                    {doc.authors && doc.authors.length > 0 && (
+                  <div
+                    onClick={() =>
+                      router.push(`/dashboard/documents/${doc.id}`)
+                    }
+                    className="cursor-pointer"
+                  >
+                    <h3 className="font-semibold text-gray-900">{doc.title}</h3>
+                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                       <span>
-                        👤 {doc.authors[0]}
-                        {doc.authors.length > 1
-                          ? ` +${doc.authors.length - 1}`
-                          : ""}
+                        📅 {new Date(doc.created_at).toLocaleDateString()}
                       </span>
-                    )}
-                    {doc.year && <span>🗓️ {doc.year}</span>}
+                      {doc.authors && doc.authors.length > 0 && (
+                        <span>
+                          👤 {doc.authors[0]}
+                          {doc.authors.length > 1
+                            ? ` +${doc.authors.length - 1}`
+                            : ""}
+                        </span>
+                      )}
+                      {doc.year && <span>🗓️ {doc.year}</span>}
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/dashboard/documents/${doc.id}`);
+                      }}
+                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      View
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteDocument(e, doc.id)}
+                      className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               ))}

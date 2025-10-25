@@ -14,6 +14,7 @@ export default function DocumentDetailPage() {
   const [document, setDocument] = useState<Document | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showPDF, setShowPDF] = useState(false);
 
   const documentId = params.id as string;
 
@@ -174,16 +175,34 @@ export default function DocumentDetailPage() {
 
             {/* PDF Download Button */}
             {document.pdf_url && (
-              <a
-                href={`${API_BASE_URL}/${document.pdf_url}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                View PDF
-              </a>
+              <>
+                <button
+                  onClick={() => setShowPDF(!showPDF)}
+                  className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-100"
+                >
+                  {showPDF ? "Hide PDF" : "Show PDF"}
+                </button>
+                <a
+                  href={`${API_BASE_URL}/${document.pdf_url}`}
+                  download
+                  className="inline-block px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                >
+                  Download PDF
+                </a>
+              </>
             )}
           </div>
+
+          {/* PDF Viewer */}
+          {document.pdf_url && showPDF && (
+            <div className="mt-6">
+              <iframe
+                src={`${API_BASE_URL}/${document.pdf_url}`}
+                className="w-full h-[800px] border border-gray-300 rounded-md"
+                title="PDF Viewer"
+              />
+            </div>
+          )}
         </div>
       </main>
     </div>

@@ -1,9 +1,10 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://10.0.0.57:3000";
 
 export interface User {
     id: string;
     email: string;
     username: string | null;
+    profile_image_url: string | null;
 }
 
 export interface LoginResponse {

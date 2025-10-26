@@ -31,7 +31,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center  py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="flex flex-col items-center gap-4">
@@ -42,13 +42,19 @@ export default function LoginPage() {
               height={80}
               priority
             />
-            <h2 className="text-3xl font-bold text-gray-900">
-              Sign in to ScholarVault
+            <h2 className="text-3xl font-bold text-gray-900 ">
+              <span className="text-lg font-normal">
+                Sign in to&nbsp;&nbsp;
+              </span>
+              <span className="font-almendra">ScholarVault</span>
             </h2>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="mt-8 space-y-6 bg-gray-200/60 p-10 rounded-2xl"
+        >
           {error && (
             <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded">
               {error}

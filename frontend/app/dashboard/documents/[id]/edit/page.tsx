@@ -158,8 +158,8 @@ export default function EditDocumentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+    <div className="min-h-screen ">
+      <header className=" shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
             onClick={() => router.push(`/dashboard/documents/${documentId}`)}
@@ -180,9 +180,9 @@ export default function EditDocumentPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="rounded-lg shadow p-6">
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="rounded-lg shadow p-6">
               <form onSubmit={handleSubmit} className="space-y-8">
                 {/* Error Display */}
                 {error && (

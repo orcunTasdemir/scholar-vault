@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, Document } from "@/lib/api";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://10.0.0.57:3000";
+
 import Image from "next/image";
 
 export default function DocumentDetailPage() {
@@ -65,9 +66,9 @@ export default function DocumentDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen ">
       {/* Header */}
-      <header className="bg-white shadow">
+      <header className=" shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
             onClick={() => router.push("/dashboard")}
@@ -91,7 +92,7 @@ export default function DocumentDetailPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="rounded-lg shadow p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Authors */}
             {document.authors && document.authors.length > 0 && (
@@ -133,6 +134,46 @@ export default function DocumentDetailPage() {
               </div>
             )}
 
+            {/* Volume */}
+            {document.volume && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Volume
+                </label>
+                <p className="text-gray-900">{document.volume}</p>
+              </div>
+            )}
+
+            {/* Issue */}
+            {document.issue && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Issue
+                </label>
+                <p className="text-gray-900">{document.issue}</p>
+              </div>
+            )}
+
+            {/* Pages */}
+            {document.pages && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Pages
+                </label>
+                <p className="text-gray-900">{document.pages}</p>
+              </div>
+            )}
+
+            {/* Publisher */}
+            {document.publisher && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Publisher
+                </label>
+                <p className="text-gray-900">{document.publisher}</p>
+              </div>
+            )}
+
             {/* DOI */}
             {document.doi && (
               <div>
@@ -153,13 +194,32 @@ export default function DocumentDetailPage() {
                   href={document.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800"
+                  className="text-blue-600 hover:text-blue-800 break-all"
                 >
                   {document.url}
                 </a>
               </div>
             )}
           </div>
+
+          {/* Keywords */}
+          {document.keywords && document.keywords.length > 0 && (
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Keywords
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {document.keywords.map((keyword, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                  >
+                    {keyword}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Abstract */}
           {document.abstract_text && (

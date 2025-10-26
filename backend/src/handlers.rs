@@ -437,6 +437,14 @@ pub async fn upload_pdf(
         if name == "file" {
             let original_filename = field.file_name().unwrap_or("unknown.pdf").to_string();
 
+            // Validate file extension
+            if !original_filename.to_lowercase().ends_with(".pdf") {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({"error": "Only PDF files are allowed"})),
+                ));
+            }
+
             // Generate unique filename
             let file_id = uuid::Uuid::new_v4();
             let stored_filename = format!("{}_{}", file_id, original_filename);

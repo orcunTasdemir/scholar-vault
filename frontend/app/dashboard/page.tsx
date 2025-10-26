@@ -192,7 +192,7 @@ export default function DashboardPage() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100/50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <button className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100/50 transition-colors focus:outline-none">
                 {user.profile_image_url ? (
                   <Image
                     src={`http://10.0.0.57:3000/${user.profile_image_url}`}
@@ -263,7 +263,7 @@ export default function DashboardPage() {
                 My Documents
               </h2>
               <label
-                className={`px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 inline-block transition-colors shadow-sm ${
+                className={`px-4 py-2 rounded-md inline-block transition-colors shadow-sm ${
                   uploadStatus === "idle"
                     ? "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer hover:shadow"
                     : "bg-gray-400 text-white cursor-not-allowed"

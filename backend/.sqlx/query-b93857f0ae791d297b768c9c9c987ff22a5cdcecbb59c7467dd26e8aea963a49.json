@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM document_collections WHERE document_id = $1 AND collection_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b93857f0ae791d297b768c9c9c987ff22a5cdcecbb59c7467dd26e8aea963a49"
+}

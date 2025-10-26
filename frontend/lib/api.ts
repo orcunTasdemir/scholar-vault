@@ -33,6 +33,16 @@ export interface Document {
     updated_at: string;
 }
 
+
+export interface Collection {
+    id: string;
+    user_id: string;
+    name: string;
+    parent_id: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
 class ApiClient {
     private getHeaders(token?: string): HeadersInit {
         const headers: HeadersInit = {
@@ -195,12 +205,89 @@ class ApiClient {
 
 
 
+    async getCollections(token: string): Promise<Collection[]> {
+        const response = await fetch(`${API_BASE_URL}/api/collections`, {
+            headers: this.getHeaders(token),
+        });
 
+        if (!response.ok) {
+            throw new Error('Failed to fetch collections');
+        }
+        return response.json();
+    }
 
+    async createCollection(token: string, name: string, parent_id: string | null): Promise<Collection> {
+        const response = await fetch(`${API_BASE_URL}/api/collections`, {
+            method: 'POST',
+            headers: this.getHeaders(token),
+            body: JSON.stringify({ name, parent_id }),
+        });
 
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to create collection');
+        }
+        return response.json();
+    }
 
+    async updateCollection(token: string, collectionId: string, updates: { name?: string; parent_id?: string | null }): Promise<Collection> {
+        const response = await fetch(`${API_BASE_URL}/api/collections/${collectionId}`, {
+            method: 'PUT',
+            headers: this.getHeaders(token),
+            body: JSON.stringify(updates),
+        });
 
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to update collection');
+        }
+        return response.json();
+    }
 
+    async deleteCollection(token: string, collectionId: string): Promise<void> {
+        const response = await fetch(`${API_BASE_URL}/api/collections/${collectionId}`, {
+            method: 'DELETE',
+            headers: this.getHeaders(token),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to delete collection');
+        }
+    }
+
+    async getCollectionDocuments(token: string, collectionId: string): Promise<Document[]> {
+        const response = await fetch(`${API_BASE_URL}/api/collections/${collectionId}/documents`, {
+            headers: this.getHeaders(token),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch collection documents');
+        }
+        return response.json();
+    }
+
+    async addDocumentToCollection(token: string, collectionId: string, documentId: string): Promise<void> {
+        const response = await fetch(`${API_BASE_URL}/api/collections/${collectionId}/documents/${documentId}`, {
+            method: 'POST',
+            headers: this.getHeaders(token),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to add document to collection');
+        }
+    }
+
+    async removeDocumentFromCollection(token: string, collectionId: string, documentId: string): Promise<void> {
+        const response = await fetch(`${API_BASE_URL}/api/collections/${collectionId}/documents/${documentId}`, {
+            method: 'DELETE',
+            headers: this.getHeaders(token),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to remove document from collection');
+        }
+    }
 }
 
 export const api = new ApiClient();

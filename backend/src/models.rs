@@ -112,3 +112,26 @@ pub struct UpdateDocument {
     pub keywords: Option<Vec<String>>,
     pub pdf_url: Option<String>,
 }
+
+// Collection models
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct Collection {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub name: String,
+    pub parent_id: Option<Uuid>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateCollection {
+    pub name: String,
+    pub parent_id: Option<Uuid>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateCollection {
+    pub name: Option<String>,
+    pub parent_id: Option<Uuid>,
+}

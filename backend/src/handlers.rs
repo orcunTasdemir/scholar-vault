@@ -9,8 +9,8 @@ use crate::{
     auth::create_jwt,
     middleware::AuthUser,
     models::{
-        CreateDocument, CreateUser, Document, LoginRequest, LoginResponse, UpdateDocument,
-        UpdateProfile, User, UserResponse,
+        Collection, CreateCollection, CreateDocument, CreateUser, Document, LoginRequest,
+        LoginResponse, UpdateCollection, UpdateDocument, UpdateProfile, User, UserResponse,
     },
     state::{self, AppState},
 };
@@ -792,4 +792,422 @@ pub async fn update_profile(
         username: updated_user.username,
         profile_image_url: updated_user.profile_image_url,
     }))
+}
+
+pub async fn get_user_collections(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+) -> Result<Json<Vec<Collection>>, (StatusCode, Json<Value>)> {
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    let collections = sqlx::query_as!(
+        Collection,
+        r#"
+        SELECT id, user_id, name, parent_id, created_at, updated_at
+        FROM collections
+        WHERE user_id = $1
+        ORDER BY name ASC
+        "#,
+        user_id
+    )
+    .fetch_all(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to fetch collections"})),
+        )
+    })?;
+
+    Ok(Json(collections))
+}
+
+pub async fn create_collection(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+    Json(payload): Json<CreateCollection>,
+) -> Result<(StatusCode, Json<Collection>), (StatusCode, Json<Value>)> {
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    // If parent_id is provided, verify it belongs to this user
+    if let Some(parent_id) = payload.parent_id {
+        let parent_exists = sqlx::query!(
+            "SELECT id FROM collections WHERE id = $1 AND user_id = $2",
+            parent_id,
+            user_id
+        )
+        .fetch_optional(&state.db)
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "Database error"})),
+            )
+        })?;
+
+        if parent_exists.is_none() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json(json!({"error": "Parent collection not found"})),
+            ));
+        }
+    }
+
+    let collection = sqlx::query_as!(
+        Collection,
+        r#"
+        INSERT INTO collections (user_id, name, parent_id)
+        VALUES ($1, $2, $3)
+        RETURNING id, user_id, name, parent_id, created_at, updated_at
+        "#,
+        user_id,
+        payload.name,
+        payload.parent_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to create collection"})),
+        )
+    })?;
+
+    Ok((StatusCode::CREATED, Json(collection)))
+}
+
+pub async fn update_collection(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+    Path(collection_id): Path<uuid::Uuid>,
+    Json(payload): Json<UpdateCollection>,
+) -> Result<Json<Collection>, (StatusCode, Json<Value>)> {
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    // Verify collection belongs to user
+    let existing = sqlx::query!(
+        "SELECT id FROM collections WHERE id = $1 AND user_id = $2",
+        collection_id,
+        user_id
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Database error"})),
+        )
+    })?;
+
+    if existing.is_none() {
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "Collection not found"})),
+        ));
+    }
+
+    // If new parent_id provided, verify it's not creating a cycle
+    if let Some(new_parent_id) = payload.parent_id {
+        // Can't set parent to itself
+        if new_parent_id == collection_id {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json(json!({"error": "Collection cannot be its own parent"})),
+            ));
+        }
+
+        // Verify parent exists and belongs to user
+        let parent_exists = sqlx::query!(
+            "SELECT id FROM collections WHERE id = $1 AND user_id = $2",
+            new_parent_id,
+            user_id
+        )
+        .fetch_optional(&state.db)
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "Database error"})),
+            )
+        })?;
+
+        if parent_exists.is_none() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json(json!({"error": "Parent collection not found"})),
+            ));
+        }
+    }
+
+    let updated_collection = sqlx::query_as!(
+        Collection,
+        r#"
+        UPDATE collections
+        SET name = COALESCE($1, name),
+            parent_id = COALESCE($2, parent_id),
+            updated_at = NOW()
+        WHERE id = $3 AND user_id = $4
+        RETURNING id, user_id, name, parent_id, created_at, updated_at
+        "#,
+        payload.name,
+        payload.parent_id,
+        collection_id,
+        user_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to update collection"})),
+        )
+    })?;
+
+    Ok(Json(updated_collection))
+}
+
+pub async fn delete_collection(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+    Path(collection_id): Path<uuid::Uuid>,
+) -> Result<StatusCode, (StatusCode, Json<Value>)> {
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    let result = sqlx::query!(
+        "DELETE FROM collections WHERE id = $1 AND user_id = $2",
+        collection_id,
+        user_id
+    )
+    .execute(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to delete collection"})),
+        )
+    })?;
+
+    if result.rows_affected() == 0 {
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "Collection not found"})),
+        ));
+    }
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn add_document_to_collection(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+    Path((collection_id, document_id)): Path<(uuid::Uuid, uuid::Uuid)>,
+) -> Result<StatusCode, (StatusCode, Json<Value>)> {
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    // Verify both collection and document belong to user
+    let collection_check = sqlx::query!(
+        "SELECT id FROM collections WHERE id = $1 AND user_id = $2",
+        collection_id,
+        user_id
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Database error"})),
+        )
+    })?;
+
+    if collection_check.is_none() {
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "Collection not found"})),
+        ));
+    }
+
+    let document_check = sqlx::query!(
+        "SELECT id FROM documents WHERE id = $1 AND user_id = $2",
+        document_id,
+        user_id
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Database error"})),
+        )
+    })?;
+
+    if document_check.is_none() {
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "Document not found"})),
+        ));
+    }
+
+    // Insert into junction table (ignore if already exists)
+    sqlx::query!(
+        r#"
+        INSERT INTO document_collections (document_id, collection_id)
+        VALUES ($1, $2)
+        ON CONFLICT DO NOTHING
+        "#,
+        document_id,
+        collection_id
+    )
+    .execute(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to add document to collection"})),
+        )
+    })?;
+
+    Ok(StatusCode::CREATED)
+}
+
+pub async fn remove_document_from_collection(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+    Path((collection_id, document_id)): Path<(uuid::Uuid, uuid::Uuid)>,
+) -> Result<StatusCode, (StatusCode, Json<Value>)> {
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    // Verify collection belongs to user
+    let collection_check = sqlx::query!(
+        "SELECT id FROM collections WHERE id = $1 AND user_id = $2",
+        collection_id,
+        user_id
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Database error"})),
+        )
+    })?;
+
+    if collection_check.is_none() {
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "Collection not found"})),
+        ));
+    }
+
+    let result = sqlx::query!(
+        "DELETE FROM document_collections WHERE document_id = $1 AND collection_id = $2",
+        document_id,
+        collection_id
+    )
+    .execute(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to remove document from collection"})),
+        )
+    })?;
+
+    if result.rows_affected() == 0 {
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "Document not in collection"})),
+        ));
+    }
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn get_collection_documents(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+    Path(collection_id): Path<uuid::Uuid>,
+) -> Result<Json<Vec<Document>>, (StatusCode, Json<Value>)> {
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    // Verify collection belongs to user
+    let collection_check = sqlx::query!(
+        "SELECT id FROM collections WHERE id = $1 AND user_id = $2",
+        collection_id,
+        user_id
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Database error"})),
+        )
+    })?;
+
+    if collection_check.is_none() {
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "Collection not found"})),
+        ));
+    }
+
+    let documents = sqlx::query_as!(
+        Document,
+        r#"
+        SELECT d.id, d.user_id, d.title, d.authors, d.year, d.publication_type, 
+               d.journal, d.volume, d.issue, d.pages, d.publisher, d.doi, d.url,
+               d.abstract_text, d.keywords, d.pdf_url, d.created_at, d.updated_at
+        FROM documents d
+        INNER JOIN document_collections dc ON d.id = dc.document_id
+        WHERE dc.collection_id = $1 AND d.user_id = $2
+        ORDER BY d.created_at DESC
+        "#,
+        collection_id,
+        user_id
+    )
+    .fetch_all(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to fetch documents"})),
+        )
+    })?;
+
+    Ok(Json(documents))
 }

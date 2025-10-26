@@ -144,6 +144,63 @@ class ApiClient {
         }
         return response.json();
     }
+
+    // Profile methods
+    async updateProfile(token: string, username: string | null): Promise<User> {
+        const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
+            method: 'PUT',
+            headers: this.getHeaders(token),
+            body: JSON.stringify({ username }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to update profile');
+        }
+        return response.json();
+    }
+
+    async uploadProfileImage(token: string, file: File): Promise<User> {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch(`${API_BASE_URL}/api/user/profile-image`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                // Don't set Content-Type - browser sets it automatically with boundary for multipart
+            },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to upload profile image');
+        }
+        return response.json();
+    }
+
+    async deleteProfileImage(token: string): Promise<User> {
+        const response = await fetch(`${API_BASE_URL}/api/user/profile-image`, {
+            method: 'DELETE',
+            headers: this.getHeaders(token),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to delete profile image');
+        }
+        return response.json();
+    }
+
+
+
+
+
+
+
+
+
 }
 
 export const api = new ApiClient();

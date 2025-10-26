@@ -184,7 +184,7 @@ export default function DashboardPage() {
               <h1 className="text-2xl font-bold text-gray-900 font-almendra">
                 ScholarVault
               </h1>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-900 font-bold font-almendra">
                 Welcome back, {user.username || user.email}
               </p>
             </div>
@@ -195,7 +195,7 @@ export default function DashboardPage() {
               <button className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100/50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
                 {user.profile_image_url ? (
                   <Image
-                    src={user.profile_image_url}
+                    src={`http://10.0.0.57:3000/${user.profile_image_url}`}
                     alt={user.username || "User"}
                     width={32}
                     height={32}
@@ -206,9 +206,9 @@ export default function DashboardPage() {
                     {(user.username || user.email).charAt(0).toUpperCase()}
                   </div>
                 )}
-                <span className="text-sm font-medium text-gray-700">
+                {/* <span className="text-sm font-medium text-gray-700">
                   {user.username || user.email.split("@")[0]}
-                </span>
+                </span> */}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-white">
@@ -216,7 +216,7 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-3">
                   {user.profile_image_url ? (
                     <Image
-                      src={user.profile_image_url}
+                      src={`http://10.0.0.57:3000/${user.profile_image_url}`}
                       alt={user.username || "User"}
                       width={40}
                       height={40}
@@ -242,7 +242,7 @@ export default function DashboardPage() {
                 Dashboard
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => alert("Profile page coming soon!")}
+                onClick={() => router.push("/dashboard/profile")}
               >
                 Profile Settings
               </DropdownMenuItem>

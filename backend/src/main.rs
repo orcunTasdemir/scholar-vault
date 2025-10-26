@@ -13,7 +13,6 @@ use state::AppState;
 
 use axum::extract::DefaultBodyLimit;
 use tower_http::cors::{Any, CorsLayer};
-use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::services::ServeDir;
 
 #[tokio::main]

@@ -13,6 +13,7 @@ interface AuthContextType {
     username?: string
   ) => Promise<void>;
   logout: () => void;
+  setUser: (user: User) => void; // ADD THIS LINE
   isLoading: boolean;
 }
 
@@ -72,7 +73,7 @@ export function AuthProvider({
 
   return (
     <AuthContext.Provider
-      value={{ user, token, login, register, logout, isLoading }}
+      value={{ user, token, login, register, logout, setUser, isLoading }}
     >
       {className ? <div className={className}>{children}</div> : children}{" "}
     </AuthContext.Provider>

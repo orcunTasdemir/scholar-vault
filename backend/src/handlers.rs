@@ -10,7 +10,7 @@ use crate::{
     middleware::AuthUser,
     models::{
         CreateDocument, CreateUser, Document, LoginRequest, LoginResponse, UpdateDocument,
-        UserResponse,
+        UpdateProfile, User, UserResponse,
     },
     state::{self, AppState},
 };
@@ -39,7 +39,7 @@ pub async fn register_user(
         r#"
         INSERT INTO users (email, password_hash, username)
         VALUES ($1, $2, $3)
-        RETURNING id, email, username, created_at
+        RETURNING id, email, username, profile_image_url, created_at
         "#,
         payload.email,
         password_hash,
@@ -49,15 +49,28 @@ pub async fn register_user(
     .await;
 
     match result {
-        Ok(user) => Ok((
-            StatusCode::CREATED,
-            Json(json!({
-                "id": user.id,
-                "email": user.email,
-                "username": user.username,
-                "created_at": user.created_at
-            })),
-        )),
+        Ok(user) => {
+            let token =
+                create_jwt(&user.id.to_string(), &user.email, &state.jwt_secret).map_err(|_| {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({"error": "Failed to generate token"})),
+                    )
+                })?;
+
+            Ok((
+                StatusCode::CREATED,
+                Json(json!({
+                    "token": token,
+                    "user": {
+                        "id": user.id,
+                        "email": user.email,
+                        "username": user.username,
+                        "profile_image_url": user.profile_image_url,
+                    }
+                })),
+            ))
+        }
         Err(sqlx::Error::Database(db_err)) if db_err.constraint() == Some("users_email_key") => {
             Err((
                 StatusCode::CONFLICT,
@@ -78,7 +91,7 @@ pub async fn login_user(
     // Find user
     let user = sqlx::query!(
         r#"
-        SELECT id, email, password_hash, username
+        SELECT id, email, password_hash, username, profile_image_url, created_at, updated_at
         FROM users
         WHERE email = $1
         "#,
@@ -131,16 +144,42 @@ pub async fn login_user(
                 id: user.id,
                 email: user.email,
                 username: user.username,
+                profile_image_url: user.profile_image_url,
             },
         }),
     ))
 }
 
-pub async fn get_current_user(AuthUser(claims): AuthUser) -> Json<Value> {
-    Json(json!({
-        "message": "You are authenticated",
-        "user_id": claims.sub,
-        "email": claims.email,
+pub async fn get_current_user(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+) -> Result<Json<UserResponse>, (StatusCode, Json<Value>)> {
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    let user = sqlx::query_as!(
+        User,
+        r#"SELECT id, email, password_hash, username, profile_image_url, created_at, updated_at FROM users WHERE id = $1"#,
+        user_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "User not found"})),
+        )
+    })?;
+
+    Ok(Json(UserResponse {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        profile_image_url: user.profile_image_url,
     }))
 }
 
@@ -518,4 +557,239 @@ pub async fn upload_pdf(
     let document = create_document_internal(&state, user_id, metadata).await?;
 
     Ok((StatusCode::CREATED, Json(json!(document))))
+}
+
+pub async fn upload_profile_image(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+    mut multipart: Multipart,
+) -> Result<Json<UserResponse>, (StatusCode, Json<Value>)> {
+    // Parse user ID from JWT claims
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    // Extract the file field from multipart
+    let mut file_data: Option<Vec<u8>> = None;
+    let mut file_extension: Option<String> = None;
+
+    while let Some(field) = multipart.next_field().await.map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": format!("Failed to read multipart field: {}", e)})),
+        )
+    })? {
+        let name = field.name().unwrap_or("").to_string();
+
+        if name == "file" {
+            let original_filename = field.file_name().unwrap_or("unknown").to_string();
+
+            // Validate file extension (jpg, jpeg, png, webp)
+            let ext = original_filename
+                .split('.')
+                .last()
+                .unwrap_or("")
+                .to_lowercase();
+
+            if !["jpg", "jpeg", "png", "webp"].contains(&ext.as_str()) {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({"error": "Only JPG, PNG, and WebP images are allowed"})),
+                ));
+            }
+
+            // Read file bytes
+            let data = field.bytes().await.map_err(|e| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({"error": format!("Failed to read file data: {}", e)})),
+                )
+            })?;
+
+            // Validate file size (5MB max)
+            if data.len() > 5 * 1024 * 1024 {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({"error": "Image must be smaller than 5MB"})),
+                ));
+            }
+
+            file_data = Some(data.to_vec());
+            file_extension = Some(ext);
+            break;
+        }
+    }
+
+    let file_data = file_data.ok_or_else(|| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": "No file provided"})),
+        )
+    })?;
+
+    let file_extension = file_extension.unwrap();
+
+    // Create uploads/profile_images directory if it doesn't exist
+    tokio::fs::create_dir_all("uploads/profile_images")
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": format!("Failed to create upload directory: {}", e)})),
+            )
+        })?;
+
+    // Delete old profile image if it exists
+    let old_user = sqlx::query_as!(
+        User,
+        r#"SELECT id, email, password_hash, username, profile_image_url, created_at, updated_at FROM users WHERE id = $1"#,
+        user_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "User not found"})),
+        )
+    })?;
+
+    if let Some(old_image_url) = old_user.profile_image_url {
+        // Delete old file from disk (ignore errors if file doesn't exist)
+        let _ = tokio::fs::remove_file(&old_image_url).await;
+    }
+
+    // Generate unique filename
+    let file_id = uuid::Uuid::new_v4();
+    let stored_filename = format!("{}_{}.{}", user_id, file_id, file_extension);
+    let upload_path = format!("uploads/profile_images/{}", stored_filename);
+
+    // Write to disk
+    tokio::fs::write(&upload_path, &file_data)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": format!("Failed to save file: {}", e)})),
+            )
+        })?;
+
+    // Update user's profile_image_url in database
+    let updated_user = sqlx::query_as!(
+        User,
+        r#"UPDATE users SET profile_image_url = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, password_hash, username, profile_image_url, created_at, updated_at"#,
+        upload_path,
+        user_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to update user profile"})),
+        )
+    })?;
+
+    Ok(Json(UserResponse {
+        id: updated_user.id,
+        email: updated_user.email,
+        username: updated_user.username,
+        profile_image_url: updated_user.profile_image_url,
+    }))
+}
+
+pub async fn delete_profile_image(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+) -> Result<Json<UserResponse>, (StatusCode, Json<Value>)> {
+    // Parse user ID from JWT claims
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    // Get current user to find their profile image
+    let user = sqlx::query_as!(
+        User,
+        r#"SELECT id, email, password_hash, username, profile_image_url, created_at, updated_at FROM users WHERE id = $1"#,
+        user_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "User not found"})),
+        )
+    })?;
+
+    // Delete file from disk if it exists
+    if let Some(image_url) = user.profile_image_url {
+        // Ignore error if file doesn't exist
+        let _ = tokio::fs::remove_file(&image_url).await;
+    }
+
+    // Update database to set profile_image_url to NULL
+    let updated_user = sqlx::query_as!(
+        User,
+        r#"UPDATE users SET profile_image_url = NULL, updated_at = NOW() WHERE id = $1 RETURNING id, email, password_hash, username, profile_image_url, created_at, updated_at"#,
+        user_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to update user profile"})),
+        )
+    })?;
+
+    Ok(Json(UserResponse {
+        id: updated_user.id,
+        email: updated_user.email,
+        username: updated_user.username,
+        profile_image_url: updated_user.profile_image_url,
+    }))
+}
+
+pub async fn update_profile(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+    Json(payload): Json<UpdateProfile>,
+) -> Result<Json<UserResponse>, (StatusCode, Json<Value>)> {
+    // Parse user ID from JWT claims
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    // Update username in database
+    let updated_user = sqlx::query_as!(
+        User,
+        r#"UPDATE users SET username = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, password_hash, username, profile_image_url, created_at, updated_at"#,
+        payload.username,
+        user_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to update profile"})),
+        )
+    })?;
+
+    Ok(Json(UserResponse {
+        id: updated_user.id,
+        email: updated_user.email,
+        username: updated_user.username,
+        profile_image_url: updated_user.profile_image_url,
+    }))
 }

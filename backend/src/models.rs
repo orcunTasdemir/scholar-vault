@@ -10,6 +10,7 @@ pub struct User {
     #[serde(skip_serializing)] //never send the has to the client
     pub password_hash: String,
     pub username: Option<String>,
+    pub profile_image_url: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -18,6 +19,11 @@ pub struct User {
 pub struct CreateUser {
     pub email: String,
     pub password: String,
+    pub username: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateProfile {
     pub username: Option<String>,
 }
 
@@ -38,6 +44,7 @@ pub struct UserResponse {
     pub id: Uuid,
     pub email: String,
     pub username: Option<String>,
+    pub profile_image_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

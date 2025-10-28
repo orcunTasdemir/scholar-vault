@@ -3,12 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { api, Document } from "@/lib/api";
+import { api, Document, Collection } from "@/lib/api";
 import Image from "next/image";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/layout/AppSidebar";
+import { AppMenubar } from "@/components/layout/AppMenubar";
 import { FolderTree } from "@/components/FolderTree";
-import { Collection } from "@/lib/api";
-import { AddToCollectionDropdown } from "@/components/AddToCollectionModal";
-
+import { DocumentGrid } from "@/components/documents/DocumentGrid";
+import { CreateFolderDialog } from "@/components/dialog/CreateFolderDialog";
+import { RenameFolderDialog } from "@/components/dialog/RenameFolderDialog";
+import { DeleteConfirmDialog } from "@/components/dialog/DeleteConfirmDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,39 +21,48 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
-import { spawn } from "child_process";
-import { BookPlus, CircleX, FileUp, View } from "lucide-react";
+import { FileUp } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, token, isLoading, logout } = useAuth();
+  const { user, token, isLoading: authLoading, logout } = useAuth();
 
-  // Document uploads
+  // Document state
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [uploadError, setUploadError] = useState("");
   const [uploadStatus, setUploadStatus] = useState<
     "idle" | "uploading" | "extracting" | "success"
   >("idle");
 
+  // Collection state
   const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedCollectionId, setSelectedCollectionId] = useState<
     string | null
   >(null);
-  const [isLoadingCollections, setIsLoadingCollections] = useState(true);
   const [collectionDocuments, setCollectionDocuments] = useState<Document[]>(
     []
   );
   const [isLoadingCollectionDocs, setIsLoadingCollectionDocs] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
+  // Dialog state
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [renameFolderOpen, setRenameFolderOpen] = useState(false);
+  const [deleteFolderOpen, setDeleteFolderOpen] = useState(false);
+  const [folderToRename, setFolderToRename] = useState<Collection | null>(null);
+  const [folderToDelete, setFolderToDelete] = useState<Collection | null>(null);
+
+  // Sidebar state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // Redirect if not authenticated
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!authLoading && !user) {
       router.push("/login");
     }
-  }, [isLoading, user, router]);
+  }, [authLoading, user, router]);
 
+  // Fetch documents
   useEffect(() => {
     const fetchDocuments = async () => {
       if (!token) return;
@@ -59,6 +72,8 @@ export default function DashboardPage() {
         setDocuments(docs);
       } catch (error) {
         console.error("Failed to fetch documents:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -67,6 +82,7 @@ export default function DashboardPage() {
     }
   }, [user, token]);
 
+  // Fetch collections
   useEffect(() => {
     const fetchCollections = async () => {
       if (!token) return;
@@ -76,8 +92,6 @@ export default function DashboardPage() {
         setCollections(cols);
       } catch (error) {
         console.error("Failed to fetch collections:", error);
-      } finally {
-        setIsLoadingCollections(false);
       }
     };
 
@@ -101,7 +115,6 @@ export default function DashboardPage() {
         setCollectionDocuments(docs);
       } catch (error) {
         console.error("Failed to fetch collection documents:", error);
-        setCollectionDocuments([]);
       } finally {
         setIsLoadingCollectionDocs(false);
       }
@@ -110,56 +123,31 @@ export default function DashboardPage() {
     fetchCollectionDocuments();
   }, [selectedCollectionId, token]);
 
-  const displayedDocuments =
-    selectedCollectionId === null ? documents : collectionDocuments;
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-600 ">Loading...</div>
-      </div>
-    );
-  }
   if (!user) {
     return null;
   }
 
+  // Get displayed documents based on selection
+  const displayedDocuments =
+    selectedCollectionId === null ? documents : collectionDocuments;
+  const selectedCollection = collections.find(
+    (c) => c.id === selectedCollectionId
+  );
+
+  // Handler: Upload PDF
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file || !token) return;
 
-    // Validate file type
-    if (file.type !== "application/pdf" && !file.name.endsWith(".pdf")) {
-      setUploadError("Please upload a PDF file only");
-      event.target.value = "";
-      return;
-    }
-
-    // Validate file size (100MB = 100 * 1024 * 1024 bytes)
-    const maxSize = 100 * 1024 * 1024;
-    if (file.size > maxSize) {
-      setUploadError(
-        `File is too large. Maximum size is 100MB (your file: ${(
-          file.size /
-          1024 /
-          1024
-        ).toFixed(1)}MB)`
-      );
-      event.target.value = "";
-      return;
-    }
-
     setUploadStatus("uploading");
     setUploadError("");
 
+    const formData = new FormData();
+    formData.append("file", file);
+
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const uploadStartTime = Date.now();
-
       const response = await fetch(
         "http://10.0.0.57:3000/api/documents/upload",
         {
@@ -171,14 +159,6 @@ export default function DashboardPage() {
         }
       );
 
-      // Once upload is complete, show extracting status
-      const uploadDuration = Date.now() - uploadStartTime;
-      // If upload took less than 1 second, show extracting briefly
-      if (uploadDuration < 1000) {
-        setUploadStatus("extracting");
-        await new Promise((resolve) => setTimeout(resolve, 500));
-      }
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         const errorMessage =
@@ -186,9 +166,10 @@ export default function DashboardPage() {
         throw new Error(errorMessage);
       }
 
+      setUploadStatus("extracting");
       const newDocument = await response.json();
 
-      // If we're viewing a collection, add the document to it
+      // If viewing a collection, add document to it
       if (selectedCollectionId && token) {
         try {
           await api.addDocumentToCollection(
@@ -196,7 +177,6 @@ export default function DashboardPage() {
             selectedCollectionId,
             newDocument.id
           );
-          // Refresh collection documents
           const docs = await api.getCollectionDocuments(
             token,
             selectedCollectionId
@@ -204,17 +184,13 @@ export default function DashboardPage() {
           setCollectionDocuments(docs);
         } catch (error) {
           console.error("Failed to add document to collection:", error);
-          // Still show success for upload, just log the collection add error
         }
       }
 
-      // Show success briefly
       setUploadStatus("success");
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       setDocuments((prev) => [...prev, newDocument]);
-
-      // Reset
       event.target.value = "";
       setUploadStatus("idle");
     } catch (error) {
@@ -226,40 +202,105 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDeleteDocument = async (
-    e: React.MouseEvent,
-    documentId: string
-  ) => {
-    e.stopPropagation(); // prevent click when deleting
-
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this document permanently?"
-      )
-    ) {
-      return;
-    }
-
+  // Handler: Create folder
+  const handleCreateFolder = async (name: string) => {
     if (!token) return;
 
     try {
-      await api.deleteDocument(token, documentId);
-      // Remove from all local state
-      setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
-      setCollectionDocuments((prev) =>
-        prev.filter((doc) => doc.id !== documentId)
-      );
+      const newCollection = await api.createCollection(token, name, null);
+      setCollections((prev) => [...prev, newCollection]);
     } catch (error) {
-      console.error("Delete error:", error);
-      alert("Failed to delete document");
+      console.error("Failed to create folder:", error);
+      alert("Failed to create folder");
     }
   };
 
+  // Handler: Rename folder (open dialog)
+  const handleRenameFolder = (collectionId: string) => {
+    const collection = collections.find((c) => c.id === collectionId);
+    if (collection) {
+      setFolderToRename(collection);
+      setRenameFolderOpen(true);
+    }
+  };
+
+  // Handler: Confirm rename
+  const handleConfirmRename = async (newName: string) => {
+    if (!token || !folderToRename) return;
+
+    try {
+      const updatedCollection = await api.updateCollection(
+        token,
+        folderToRename.id,
+        {
+          name: newName,
+        }
+      );
+      setCollections((prev) =>
+        prev.map((c) => (c.id === folderToRename.id ? updatedCollection : c))
+      );
+    } catch (error) {
+      console.error("Failed to rename folder:", error);
+      alert("Failed to rename folder");
+    }
+  };
+
+  // Handler: Delete folder (open dialog)
+  const handleDeleteFolder = (collectionId: string) => {
+    const collection = collections.find((c) => c.id === collectionId);
+    if (collection) {
+      setFolderToDelete(collection);
+      setDeleteFolderOpen(true);
+    }
+  };
+
+  // Handler: Confirm delete
+  const handleConfirmDelete = async () => {
+    if (!token || !folderToDelete) return;
+
+    try {
+      await api.deleteCollection(token, folderToDelete.id);
+      setCollections((prev) => prev.filter((c) => c.id !== folderToDelete.id));
+      if (selectedCollectionId === folderToDelete.id) {
+        setSelectedCollectionId(null);
+      }
+    } catch (error) {
+      console.error("Failed to delete folder:", error);
+      alert("Failed to delete folder");
+    }
+  };
+
+  // Handler: Select collection
+  const handleSelectCollection = (collectionId: string | null) => {
+    setSelectedCollectionId(collectionId);
+  };
+
+  // Handler: Add to collection
+  const handleAddToCollection = async (
+    documentId: string,
+    collectionId: string
+  ) => {
+    if (!token) return;
+
+    try {
+      await api.addDocumentToCollection(token, collectionId, documentId);
+
+      if (selectedCollectionId === collectionId) {
+        const docs = await api.getCollectionDocuments(token, collectionId);
+        setCollectionDocuments(docs);
+      }
+    } catch (error) {
+      console.error("Failed to add document to collection:", error);
+      alert("Failed to add document to collection");
+    }
+  };
+
+  // Handler: Remove from collection
   const handleRemoveFromCollection = async (
     e: React.MouseEvent,
     documentId: string
   ) => {
-    e.stopPropagation(); // prevent click when removing
+    e.stopPropagation();
 
     if (!selectedCollectionId || !token) return;
 
@@ -281,7 +322,6 @@ export default function DashboardPage() {
         selectedCollectionId,
         documentId
       );
-      // Remove from collection documents only
       setCollectionDocuments((prev) =>
         prev.filter((doc) => doc.id !== documentId)
       );
@@ -291,376 +331,208 @@ export default function DashboardPage() {
     }
   };
 
-  const handleCreateFolder = async (parentId: string | null) => {
-    if (!token) return;
-
-    const folderName = prompt("Enter folder name:");
-    if (!folderName) return;
-
-    try {
-      const newCollection = await api.createCollection(
-        token,
-        folderName,
-        parentId
-      );
-      setCollections((prev) => [...prev, newCollection]);
-    } catch (error) {
-      console.error("Failed to create folder:", error);
-      alert("Failed to create folder");
-    }
-  };
-
-  const handleRenameFolder = async (collectionId: string) => {
-    if (!token) return;
-
-    const collection = collections.find((c) => c.id === collectionId);
-    if (!collection) return;
-
-    const newName = prompt("Enter new folder name:", collection.name);
-    if (!newName || newName === collection.name) return;
-
-    try {
-      const updatedCollection = await api.updateCollection(
-        token,
-        collectionId,
-        { name: newName }
-      );
-      setCollections((prev) =>
-        prev.map((c) => (c.id === collectionId ? updatedCollection : c))
-      );
-    } catch (error) {
-      console.error("Failed to rename folder:", error);
-      alert("Failed to rename folder");
-    }
-  };
-
-  const handleDeleteFolder = async (collectionId: string) => {
-    if (!token) return;
-
-    const collection = collections.find((c) => c.id === collectionId);
-    if (!collection) return;
+  // Handler: Delete document
+  const handleDeleteDocument = async (
+    e: React.MouseEvent,
+    documentId: string
+  ) => {
+    e.stopPropagation();
 
     if (
       !window.confirm(
-        `Delete folder "${collection.name}"? This will also delete all subfolders.`
+        "Are you sure you want to delete this document permanently?"
       )
     ) {
       return;
     }
 
-    try {
-      await api.deleteCollection(token, collectionId);
-      setCollections((prev) => prev.filter((c) => c.id !== collectionId));
-      if (selectedCollectionId === collectionId) {
-        setSelectedCollectionId(null);
-      }
-    } catch (error) {
-      console.error("Failed to delete folder:", error);
-      alert("Failed to delete folder");
-    }
-  };
-
-  const handleSelectCollection = (collectionId: string | null) => {
-    setSelectedCollectionId(collectionId);
-  };
-
-  const handleAddToCollection = async (
-    documentId: string,
-    collectionId: string
-  ) => {
     if (!token) return;
 
     try {
-      await api.addDocumentToCollection(token, collectionId, documentId);
-
-      // Refresh collection documents if viewing that collection
-      if (selectedCollectionId === collectionId) {
-        const docs = await api.getCollectionDocuments(token, collectionId);
-        setCollectionDocuments(docs);
-      }
+      await api.deleteDocument(token, documentId);
+      setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
+      setCollectionDocuments((prev) =>
+        prev.filter((doc) => doc.id !== documentId)
+      );
     } catch (error) {
-      console.error("Failed to add document to collection:", error);
-      alert("Failed to add document to collection");
+      console.error("Delete error:", error);
+      alert("Failed to delete document");
     }
   };
 
   return (
-    <div className="min-h-screen flex ">
-      <SidebarProvider defaultOpen={false}>
-        <AppSidebar isCollapsed={isSidebarCollapsed}>
-          <FolderTree
-            collections={collections}
-            selectedCollectionId={selectedCollectionId}
-            onSelectCollection={handleSelectCollection}
-            onCreateFolder={handleCreateFolder}
-            onRenameFolder={handleRenameFolder}
-            onDeleteFolder={handleDeleteFolder}
-          />
-        </AppSidebar>
+    <div className="min-h-screen flex flex-col">
+      {/* Menubar */}
+      <AppMenubar
+        selectedCollectionId={selectedCollectionId}
+        selectedDocuments={[]} // TODO: Implement multi-select later
+        collectionName={selectedCollection?.name}
+        onUploadPDF={() => document.getElementById("file-upload")?.click()}
+        onCreateFolder={() => setCreateFolderOpen(true)}
+        onRenameFolder={() =>
+          selectedCollectionId && handleRenameFolder(selectedCollectionId)
+        }
+        onDeleteFolder={() =>
+          selectedCollectionId && handleDeleteFolder(selectedCollectionId)
+        }
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        onDeleteDocuments={() => {}} // TODO: Implement later
+        onAddToCollection={() => {}} // TODO: Implement later
+        onExport={() => {}} // TODO: Implement later
+      />
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <header className="shadow-sm sticky top-0 z-50 backdrop-blur-md">
-            <div className="flex items-center justify-between w-full px-8 py-4">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger
-                  className="scale-150"
-                  onClick={() => setIsSidebarCollapsed((prev) => !prev)}
-                />
+      {/* Main Layout */}
+      <div className="flex-1 flex">
+        <SidebarProvider defaultOpen={isSidebarOpen}>
+          <AppSidebar>
+            <FolderTree
+              collections={collections}
+              selectedCollectionId={selectedCollectionId}
+              onSelectCollection={handleSelectCollection}
+              onCreateFolder={() => setCreateFolderOpen(true)}
+              onRenameFolder={handleRenameFolder}
+              onDeleteFolder={handleDeleteFolder}
+            />
+          </AppSidebar>
 
-                <Image
-                  src="/logo.png"
-                  alt="ScholarVault Logo"
-                  width={48}
-                  height={48}
-                />
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900 font-almendra">
-                    ScholarVault
-                  </h1>
-                  <p className="text-sm text-gray-600 font-almendra font-bold">
-                    Welcome back, {user?.username || user?.email.split("@")[0]}
-                  </p>
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col">
+            {/* Header */}
+            <header className="border-b bg-background/95 backdrop-blur">
+              <div className="flex items-center justify-between px-6 py-4">
+                <div className="flex items-center gap-4">
+                  <SidebarTrigger />
+                  <div className="flex items-center gap-3">
+                    <Image
+                      src="/logo.png"
+                      alt="ScholarVault"
+                      width={40}
+                      height={40}
+                    />
+                    <div>
+                      <h1 className="text-xl font-bold font-almendra">
+                        ScholarVault
+                      </h1>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedCollection?.name || "All Documents"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-3 py-2 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    {user?.profile_image_url ? (
-                      <Image
-                        src={`http://10.0.0.57:3000/${user.profile_image_url}`}
-                        alt={user?.username || "User"}
-                        width={32}
-                        height={32}
-                        className="rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        {(user?.username || user?.email || "U")
-                          .charAt(0)
-                          .toUpperCase()}
-                      </div>
-                    )}
-                    <span className="text-sm font-medium">
-                      {user?.username || user?.email.split("@")[0]}
-                    </span>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-56 bg-gray-100/70"
-                >
-                  <DropdownMenuLabel>
-                    <div className="flex items-center gap-3">
-                      {user?.profile_image_url ? (
+                {/* User Menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-3 py-2 transition-colors">
+                      {user.profile_image_url ? (
                         <Image
                           src={`http://10.0.0.57:3000/${user.profile_image_url}`}
-                          alt={user?.username || "User"}
-                          width={40}
-                          height={40}
+                          alt={user.username || "User"}
+                          width={32}
+                          height={32}
                           className="rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                          {(user?.username || user?.email || "U")
+                        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                          {(user.username || user.email)
                             .charAt(0)
                             .toUpperCase()}
                         </div>
                       )}
-                      <div>
-                        <p className="font-medium">
-                          {user?.username || user?.email.split("@")[0]}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium">
+                          {user.username || user.email}
                         </p>
-                        <p className="text-xs text-gray-500">{user?.email}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {user.email}
+                        </p>
                       </div>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push("/dashboard")}>
-                    Dashboard
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => router.push("/dashboard/profile")}
-                  >
-                    Profile Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={logout}
-                    className="text-red-600 focus:text-red-600"
-                  >
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </header>
-
-          {/* Main Content Area */}
-          <main className=" flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                {selectedCollectionId === null
-                  ? "All Documents"
-                  : collections.find((c) => c.id === selectedCollectionId)
-                      ?.name || "Documents"}
-              </h2>
-
-              <label className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer inline-block transition-colors shadow-sm hover:shadow">
-                {uploadStatus === "uploading" && "⏳ Uploading file..."}
-                {uploadStatus === "extracting" && "🤖 Extracting metadata..."}
-                {uploadStatus === "success" && "✅ Upload complete!"}
-                {uploadStatus === "idle" && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <FileUp className="w-4 h-4" />
-                    <span>Upload PDF</span>
-                  </div>
-                )}
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleFileUpload}
-                  disabled={uploadStatus !== "idle"}
-                  className="hidden"
-                />
-              </label>
-
-              {uploadError && (
-                <p className="mt-2 text-sm text-red-600">{uploadError}</p>
-              )}
-            </div>
-
-            {(selectedCollectionId ? isLoadingCollectionDocs : isLoading) ? (
-              <p className="text-gray-600">Loading documents...</p>
-            ) : displayedDocuments.length === 0 ? (
-              <div className="text-center py-16 bg-gray-50/50 rounded-lg border-2 border-dashed border-gray-300">
-                <Image
-                  src="/logo.png"
-                  alt="No documents"
-                  width={64}
-                  height={64}
-                  className="mx-auto opacity-50"
-                />
-                <h3 className="mt-4 text-lg font-semibold text-gray-900">
-                  No documents yet
-                </h3>
-                <p className="mt-2 text-sm text-gray-600">
-                  Get started by uploading your first research document.
-                </p>
-                <p className="mt-1 text-xs text-gray-500">
-                  We&apos;ll automatically extract metadata from your PDFs!
-                </p>
-              </div>
-            ) : (
-              // <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="flex flex-col">
-                {displayedDocuments.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="flex flex-row border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 transition-all"
-                  >
-                    <div
-                      onClick={() =>
-                        router.push(`/dashboard/documents/${doc.id}`)
-                      }
-                      className="cursor-pointer"
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+                      Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => router.push("/dashboard/profile")}
                     >
-                      <h3 className="font-semibold text-gray-900">
-                        {doc.title}
-                      </h3>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                        <span>
-                          📅 {new Date(doc.created_at).toLocaleDateString()}
-                        </span>
-                        {doc.authors && doc.authors.length > 0 && (
-                          <span>
-                            👤 {doc.authors[0]}
-                            {doc.authors.length > 1
-                              ? ` +${doc.authors.length - 1}`
-                              : ""}
-                          </span>
-                        )}
-                        {doc.year && <span>🗓️ {doc.year}</span>}
-                      </div>
-                    </div>
-                    <div className="flex flex-col ml-auto gap-2 mt-4 pt-4 w-[180px] flex-none font-almendra font-bold **:text-lg">
-                      <button
-                        onClick={() =>
-                          router.push(`/dashboard/documents/${doc.id}`)
-                        }
-                        className="flex-1 px-3 py-1 text-sm bg-amber-600 text-white rounded hover:bg-amber-700"
-                      >
-                        <div className="flex items-center gap-2 text-sm">
-                          <View />
-                          <span>View</span>
-                        </div>
-                      </button>
-
-                      {selectedCollectionId === null ? (
-                        <>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button
-                                onClick={(e) => e.stopPropagation()}
-                                className="flex-1 px-3 py-1 text-sm bg-green-700 text-white rounded hover:bg-green-800"
-                              >
-                                <div className="flex items-center gap-2 text-sm">
-                                  <BookPlus className="scale-110" />
-                                  <span>Add to Collection</span>
-                                </div>
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="end"
-                              className="w-56 bg-gray-100/90"
-                            >
-                              <AddToCollectionDropdown
-                                collections={collections}
-                                onSelect={(collectionId) =>
-                                  handleAddToCollection(doc.id, collectionId)
-                                }
-                              />
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-
-                          <button
-                            onClick={(e) => handleDeleteDocument(e, doc.id)}
-                            className="flex-1 px-3 py-1 text-sm bg-red-600/70 text-white rounded hover:bg-red-700"
-                          >
-                            <div className="flex items-center gap-2 text-sm">
-                              <CircleX />
-                              <span>Delete</span>
-                            </div>
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={(e) =>
-                              handleRemoveFromCollection(e, doc.id)
-                            }
-                            className="flex-1 px-3 py-1 text-sm bg-orange-600 text-white rounded hover:bg-orange-700"
-                          >
-                            Remove
-                          </button>
-                          <button
-                            onClick={(e) => handleDeleteDocument(e, doc.id)}
-                            className="flex-1 px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
-                          >
-                            Delete
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                      Profile Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={logout} className="text-red-600">
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-            )}
-          </main>
-        </div>
-      </SidebarProvider>
+            </header>
+
+            {/* Content Area */}
+            <main className="flex-1 p-6 overflow-auto">
+              {/* Upload Section */}
+              <div className="mb-6">
+                <label className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer transition-colors">
+                  <FileUp className="w-4 h-4" />
+                  {uploadStatus === "uploading" && "Uploading..."}
+                  {uploadStatus === "extracting" && "Extracting metadata..."}
+                  {uploadStatus === "success" && "Success!"}
+                  {uploadStatus === "idle" && "Upload PDF"}
+                  <input
+                    id="file-upload"
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileUpload}
+                    disabled={uploadStatus !== "idle"}
+                    className="hidden"
+                  />
+                </label>
+
+                {uploadError && (
+                  <p className="mt-2 text-sm text-red-600">{uploadError}</p>
+                )}
+              </div>
+
+              {/* Document Grid */}
+              <DocumentGrid
+                documents={displayedDocuments}
+                collections={collections}
+                selectedCollectionId={selectedCollectionId}
+                isLoading={
+                  selectedCollectionId ? isLoadingCollectionDocs : isLoading
+                }
+                onAddToCollection={handleAddToCollection}
+                onRemoveFromCollection={handleRemoveFromCollection}
+                onDelete={handleDeleteDocument}
+              />
+            </main>
+          </div>
+        </SidebarProvider>
+      </div>
+
+      {/* Dialogs */}
+      <CreateFolderDialog
+        open={createFolderOpen}
+        onOpenChange={setCreateFolderOpen}
+        onConfirm={handleCreateFolder}
+      />
+
+      <RenameFolderDialog
+        open={renameFolderOpen}
+        onOpenChange={setRenameFolderOpen}
+        onConfirm={handleConfirmRename}
+        currentName={folderToRename?.name || ""}
+      />
+
+      <DeleteConfirmDialog
+        open={deleteFolderOpen}
+        onOpenChange={setDeleteFolderOpen}
+        onConfirm={handleConfirmDelete}
+        title={`Delete "${folderToDelete?.name}"?`}
+        description="This will permanently delete this collection and all its subfolders. Documents will not be deleted."
+      />
     </div>
   );
 }

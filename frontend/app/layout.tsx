@@ -4,7 +4,7 @@ import "./globals.css";
 import { Almendra_Display } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 
 export const almendraDisplay = Almendra_Display({
   variable: "--font-almendra-display",

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Collection } from "@/lib/api";
+import { BookMarked, BookOpen, BookX, Landmark, Pencil } from "lucide-react";
 
 interface FolderTreeProps {
   collections: Collection[];
@@ -50,12 +51,15 @@ export function FolderTree({
     const isSelected = selectedCollectionId === collection.id;
 
     return (
-      <div key={collection.id}>
+      <div key={collection.id} className="flex flex-col w-full">
         <div
           className={`flex items-center gap-2 py-2 px-3 cursor-pointer hover:bg-gray-100 ${
             isSelected ? "bg-blue-50 border-l-4 border-blue-600" : ""
           }`}
-          style={{ paddingLeft: `${level * 20 + 12}px` }}
+          style={{
+            paddingLeft: `${level * 20 + 12}px`,
+            minWidth: "max-content",
+          }}
           onClick={() => onSelectCollection(collection.id)}
         >
           {hasChildren && (
@@ -70,7 +74,9 @@ export function FolderTree({
             </button>
           )}
           {!hasChildren && <span className="w-4" />}
-          <span className="mr-2">{isExpanded ? "📂" : "📁"}</span>
+          <span className="mr-2">
+            {isSelected ? <BookOpen /> : <BookMarked />}
+          </span>
           <span className="flex-1 text-sm">{collection.name}</span>
           <button
             onClick={(e) => {
@@ -80,7 +86,7 @@ export function FolderTree({
             className="text-xs text-gray-500 hover:text-gray-700 p-1"
             title="Rename"
           >
-            ✏️
+            <Pencil className="scale-70" />
           </button>
           <button
             onClick={(e) => {
@@ -90,7 +96,7 @@ export function FolderTree({
             className="text-xs text-gray-500 hover:text-red-600 p-1"
             title="Delete"
           >
-            🗑️
+            <BookX className="scale-70" />
           </button>
         </div>
         {isExpanded && hasChildren && (
@@ -103,26 +109,31 @@ export function FolderTree({
   const rootFolders = buildTree(null);
 
   return (
-    <div className="w-64 h-full overflow-y-auto">
-      <div className="p-4">
-        {/* <h2 className="font-semibold text-gray-900">Collections</h2> */}
-        <button
-          onClick={() => onCreateFolder(null)}
-          className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+    <div className="h-full overflow-y-auto">
+      <div className="inline-block min-w-[16rem]">
+        <div className="p-4">
+          {/* <h2 className="font-semibold text-gray-900">Collections</h2> */}
+          <button
+            onClick={() => onCreateFolder(null)}
+            className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+          >
+            + New Collections
+          </button>
+        </div>
+        <div
+          className={`py-2 px-3 cursor-pointer hover:bg-gray-100 ${
+            selectedCollectionId === null ? "border-l-4 border-blue-600" : ""
+          }`}
+          onClick={() => onSelectCollection(null)}
+          style={{ minWidth: "max-content" }}
         >
-          + New Folder
-        </button>
+          <div className="flex items-center gap-2 text-sm">
+            <Landmark className="w-4 h-4" />
+            <span className="">All Documents</span>
+          </div>
+        </div>
+        {rootFolders.map((folder) => renderFolder(folder))}
       </div>
-      <div
-        className={`py-2 px-3 cursor-pointer hover:bg-gray-100 ${
-          selectedCollectionId === null ? "border-l-4 border-blue-600" : ""
-        }`}
-        onClick={() => onSelectCollection(null)}
-      >
-        <span className="mr-2">📚</span>
-        <span className="text-sm">All Documents</span>
-      </div>
-      {rootFolders.map((folder) => renderFolder(folder))}
     </div>
   );
 }

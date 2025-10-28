@@ -40,6 +40,7 @@ export default function DashboardPage() {
     []
   );
   const [isLoadingCollectionDocs, setIsLoadingCollectionDocs] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -384,7 +385,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen flex ">
       <SidebarProvider defaultOpen={false}>
-        <AppSidebar>
+        <AppSidebar isCollapsed={isSidebarCollapsed}>
           <FolderTree
             collections={collections}
             selectedCollectionId={selectedCollectionId}
@@ -401,7 +402,10 @@ export default function DashboardPage() {
           <header className="shadow-sm sticky top-0 z-50 backdrop-blur-md">
             <div className="flex items-center justify-between w-full px-8 py-4">
               <div className="flex items-center gap-3">
-                <SidebarTrigger className="scale-150" />
+                <SidebarTrigger
+                  className="scale-150"
+                  onClick={() => setIsSidebarCollapsed((prev) => !prev)}
+                />
 
                 <Image
                   src="/logo.png"
@@ -493,7 +497,7 @@ export default function DashboardPage() {
           </header>
 
           {/* Main Content Area */}
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <main className=" flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
             <div className="mb-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 {selectedCollectionId === null

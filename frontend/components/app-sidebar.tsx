@@ -11,48 +11,26 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-// Menu items.
-// const items = [
-//   {
-//     title: "Home",
-//     url: "#",
-//     icon: Home,
-//   },
-//   {
-//     title: "Inbox",
-//     url: "#",
-//     icon: Inbox,
-//   },
-//   {
-//     title: "Calendar",
-//     url: "#",
-//     icon: Calendar,
-//   },
-//   {
-//     title: "Search",
-//     url: "#",
-//     icon: Search,
-//   },
-//   {
-//     title: "Settings",
-//     url: "#",
-//     icon: Settings,
-//   },
-// ];
-
-export function AppSidebar({
-  children,
-}: Readonly<{
+interface AppSidebarProps {
   children: React.ReactNode;
-}>) {
+  isCollapsed: boolean;
+}
+
+export function AppSidebar({ children, isCollapsed }: AppSidebarProps) {
   return (
-    <Sidebar className="[--sidebar:0_0%_0%_/_0] shadow-sm backdrop-blur-md font-almendra font-bold text-3xl">
-      <SidebarContent>
+    <Sidebar
+      className="[--sidebar:0_0%_0%/0] **:font-almendra **:font-bold h-full shadow-sm backdrop-blur-md flex flex-col transition-all duration-200"
+      style={{
+        width: isCollapsed ? "0rem" : "max-content",
+        minWidth: isCollapsed ? "0rem" : "16rem",
+      }}
+    >
+      <SidebarContent className="w-full">
         <SidebarGroup>
-          <SidebarGroupLabel className="pl-4 pt-5 text-xl font-bold">
+          <SidebarGroupLabel className="pl-4 pt-5 text-2xl text-black">
             Collections
           </SidebarGroupLabel>
-          <SidebarGroupContent className="text-3xl">
+          <SidebarGroupContent className="h-full w-max">
             <SidebarMenu>{children}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

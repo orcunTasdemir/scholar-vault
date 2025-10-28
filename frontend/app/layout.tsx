@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Almendra_Display } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 
 export const almendraDisplay = Almendra_Display({
   variable: "--font-almendra-display",
@@ -36,7 +38,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${almendraDisplay.variable} antialiased`}
       >
-        <div className="fixed inset-0 bg-[url(../public/background.png)] bg-cover opacity-70 -z-1"></div>
+        <div className="fixed inset-0 bg-[url(../public/background.png)] bg-cover opacity-80 -z-1"></div>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

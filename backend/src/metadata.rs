@@ -166,65 +166,65 @@ pub async fn extract_metadata_from_pdf(pdf_path: &str) -> Result<CreateDocument,
                 .flatten()
                 .collect::<Vec<_>>();
 
-                if !missing_fields.is_empty() {
-                    println!(
-                        "CrossRef missing fields: {:?}. Using AI to fill gaps...",
-                        missing_fields
-                    );
+                // if !missing_fields.is_empty() {
+                //     println!(
+                //         "CrossRef missing fields: {:?}. Using AI to fill gaps...",
+                //         missing_fields
+                //     );
 
-                    // Run AI to get missing fields
-                    match analyze_with_openai(&pdf_text).await {
-                        Ok(ai_metadata) => {
-                            println!("AI extraction successful");
-                            // Fill in missing fields from AI
-                            if final_metadata.title.is_empty() {
-                                final_metadata.title = ai_metadata.title;
-                            }
-                            if final_metadata.authors.is_none() {
-                                final_metadata.authors = ai_metadata.authors;
-                            }
-                            if final_metadata.year.is_none() {
-                                final_metadata.year = ai_metadata.year;
-                            }
-                            if final_metadata.journal.is_none() {
-                                final_metadata.journal = ai_metadata.journal;
-                            }
-                            if final_metadata.publication_type.is_none() {
-                                final_metadata.publication_type = ai_metadata.publication_type;
-                            }
-                            if final_metadata.volume.is_none() {
-                                final_metadata.volume = ai_metadata.volume;
-                            }
-                            if final_metadata.issue.is_none() {
-                                final_metadata.issue = ai_metadata.issue;
-                            }
-                            if final_metadata.pages.is_none() {
-                                final_metadata.pages = ai_metadata.pages;
-                            }
-                            if final_metadata.publisher.is_none() {
-                                final_metadata.publisher = ai_metadata.publisher;
-                            }
-                            if final_metadata.url.is_none() {
-                                final_metadata.url = ai_metadata.url;
-                            }
-                            if final_metadata.abstract_text.is_none() {
-                                final_metadata.abstract_text = ai_metadata.abstract_text;
-                            }
-                            if final_metadata.keywords.is_none() {
-                                final_metadata.keywords = ai_metadata.keywords;
-                            }
-                            println!("Merged CrossRef + AI data for complete metadata");
-                        }
-                        Err(e) => {
-                            eprintln!(
-                                "AI extraction failed: {}. Using CrossRef data with gaps.",
-                                e
-                            );
-                        }
-                    }
-                } else {
-                    println!("CrossRef has complete metadata, no AI needed");
-                }
+                //     // Run AI to get missing fields
+                //     match analyze_with_openai(&pdf_text).await {
+                //         Ok(ai_metadata) => {
+                //             println!("AI extraction successful");
+                //             // Fill in missing fields from AI
+                //             if final_metadata.title.is_empty() {
+                //                 final_metadata.title = ai_metadata.title;
+                //             }
+                //             if final_metadata.authors.is_none() {
+                //                 final_metadata.authors = ai_metadata.authors;
+                //             }
+                //             if final_metadata.year.is_none() {
+                //                 final_metadata.year = ai_metadata.year;
+                //             }
+                //             if final_metadata.journal.is_none() {
+                //                 final_metadata.journal = ai_metadata.journal;
+                //             }
+                //             if final_metadata.publication_type.is_none() {
+                //                 final_metadata.publication_type = ai_metadata.publication_type;
+                //             }
+                //             if final_metadata.volume.is_none() {
+                //                 final_metadata.volume = ai_metadata.volume;
+                //             }
+                //             if final_metadata.issue.is_none() {
+                //                 final_metadata.issue = ai_metadata.issue;
+                //             }
+                //             if final_metadata.pages.is_none() {
+                //                 final_metadata.pages = ai_metadata.pages;
+                //             }
+                //             if final_metadata.publisher.is_none() {
+                //                 final_metadata.publisher = ai_metadata.publisher;
+                //             }
+                //             if final_metadata.url.is_none() {
+                //                 final_metadata.url = ai_metadata.url;
+                //             }
+                //             if final_metadata.abstract_text.is_none() {
+                //                 final_metadata.abstract_text = ai_metadata.abstract_text;
+                //             }
+                //             if final_metadata.keywords.is_none() {
+                //                 final_metadata.keywords = ai_metadata.keywords;
+                //             }
+                //             println!("Merged CrossRef + AI data for complete metadata");
+                //         }
+                //         Err(e) => {
+                //             eprintln!(
+                //                 "AI extraction failed: {}. Using CrossRef data with gaps.",
+                //                 e
+                //             );
+                //         }
+                //     }
+                // } else {
+                //     println!("CrossRef has complete metadata, no AI needed");
+                // }
 
                 return Ok(final_metadata);
             }
@@ -236,12 +236,15 @@ pub async fn extract_metadata_from_pdf(pdf_path: &str) -> Result<CreateDocument,
             }
         }
     } else {
-        println!("No DOI found in PDF. Using AI extraction.");
+        println!(
+            "No DOI found in PDF. Using AI extraction. (AI extraction is commented out for front-end development)"
+        );
     }
 
     // Fallback to OpenAI for full analysis (when no DOI or CrossRef failed)
-    let metadata = analyze_with_openai(&pdf_text).await?;
-    Ok(metadata)
+    // let metadata = analyze_with_openai(&pdf_text).await?;
+    // make an empty one for now
+    Ok(final_metadata)
 }
 
 fn extract_text_from_pdf(pdf_path: &str) -> Result<String, String> {

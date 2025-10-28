@@ -105,7 +105,7 @@ export function FolderTree({
   return (
     <div className="w-64 h-full overflow-y-auto">
       <div className="p-4">
-        <h2 className="font-semibold text-gray-900">Collections</h2>
+        {/* <h2 className="font-semibold text-gray-900">Collections</h2> */}
         <button
           onClick={() => onCreateFolder(null)}
           className="mt-2 text-sm text-blue-600 hover:text-blue-800"

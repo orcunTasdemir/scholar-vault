@@ -115,7 +115,7 @@ export function FolderTree({
           {/* <h2 className="font-semibold text-gray-900">Collections</h2> */}
           <button
             onClick={() => onCreateFolder(null)}
-            className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+            className="mt-2 text-lg text-blue-600 hover:text-blue-800"
           >
             + New Collections
           </button>
@@ -129,7 +129,7 @@ export function FolderTree({
         >
           <div className="flex items-center gap-2 text-sm">
             <Landmark className="w-4 h-4" />
-            <span className="">All Documents</span>
+            <span className="text-lg">All Documents</span>
           </div>
         </div>
         {rootFolders.map((folder) => renderFolder(folder))}

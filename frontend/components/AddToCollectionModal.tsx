@@ -2,6 +2,7 @@
 
 import { Collection } from "@/lib/api";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { BookPlus } from "lucide-react";
 
 interface AddToCollectionDropdownProps {
   collections: Collection[];
@@ -31,7 +32,9 @@ export function AddToCollectionDropdown({
           onClick={() => onSelect(collection.id)}
           className="cursor-pointer"
         >
-          <span className="mr-2">📁</span>
+          <span className="mr-2">
+            <BookPlus className="scale-110" />
+          </span>
           <span>{collection.name}</span>
         </DropdownMenuItem>
       ))}

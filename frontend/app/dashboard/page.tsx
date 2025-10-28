@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { spawn } from "child_process";
+import { BookPlus, CircleX, FileUp, View } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -510,7 +512,12 @@ export default function DashboardPage() {
                 {uploadStatus === "uploading" && "⏳ Uploading file..."}
                 {uploadStatus === "extracting" && "🤖 Extracting metadata..."}
                 {uploadStatus === "success" && "✅ Upload complete!"}
-                {uploadStatus === "idle" && "📤 Upload PDF"}
+                {uploadStatus === "idle" && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <FileUp className="w-4 h-4" />
+                    <span>Upload PDF</span>
+                  </div>
+                )}
                 <input
                   type="file"
                   accept=".pdf"
@@ -547,11 +554,12 @@ export default function DashboardPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              // <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="flex flex-col">
                 {displayedDocuments.map((doc) => (
                   <div
                     key={doc.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 transition-all"
+                    className="flex flex-row border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 transition-all"
                   >
                     <div
                       onClick={() =>
@@ -577,14 +585,17 @@ export default function DashboardPage() {
                         {doc.year && <span>🗓️ {doc.year}</span>}
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex flex-col ml-auto gap-2 mt-4 pt-4 w-[180px] flex-none font-almendra font-bold **:text-lg">
                       <button
                         onClick={() =>
                           router.push(`/dashboard/documents/${doc.id}`)
                         }
-                        className="flex-1 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                        className="flex-1 px-3 py-1 text-sm bg-amber-600 text-white rounded hover:bg-amber-700"
                       >
-                        View
+                        <div className="flex items-center gap-2 text-sm">
+                          <View />
+                          <span>View</span>
+                        </div>
                       </button>
 
                       {selectedCollectionId === null ? (
@@ -593,12 +604,18 @@ export default function DashboardPage() {
                             <DropdownMenuTrigger asChild>
                               <button
                                 onClick={(e) => e.stopPropagation()}
-                                className="flex-1 px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                                className="flex-1 px-3 py-1 text-sm bg-green-700 text-white rounded hover:bg-green-800"
                               >
-                                + Collection
+                                <div className="flex items-center gap-2 text-sm">
+                                  <BookPlus className="scale-110" />
+                                  <span>Add to Collection</span>
+                                </div>
                               </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-56 bg-gray-100/90"
+                            >
                               <AddToCollectionDropdown
                                 collections={collections}
                                 onSelect={(collectionId) =>
@@ -610,9 +627,12 @@ export default function DashboardPage() {
 
                           <button
                             onClick={(e) => handleDeleteDocument(e, doc.id)}
-                            className="flex-1 px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                            className="flex-1 px-3 py-1 text-sm bg-red-600/70 text-white rounded hover:bg-red-700"
                           >
-                            Delete
+                            <div className="flex items-center gap-2 text-sm">
+                              <CircleX />
+                              <span>Delete</span>
+                            </div>
                           </button>
                         </>
                       ) : (

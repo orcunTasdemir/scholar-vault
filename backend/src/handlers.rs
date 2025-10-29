@@ -15,6 +15,10 @@ use crate::{
     state::{self, AppState},
 };
 
+pub struct SearchQuery {
+    q: String,
+}
+
 pub async fn health_check() -> Json<Value> {
     Json(json!({
         "status": "healthy",
@@ -1206,6 +1210,54 @@ pub async fn get_collection_documents(
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"error": "Failed to fetch documents"})),
+        )
+    })?;
+
+    Ok(Json(documents))
+}
+
+// Add this handler function after get_user_documents
+pub async fn search_documents(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+    Query(params): Query<SearchQuery>,
+) -> Result<Json<Vec<Document>>, (StatusCode, Json<Value>)> {
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    let search_pattern = format!("%{}%", params.q);
+
+    let documents = sqlx::query_as!(
+        Document,
+        r#"
+              SELECT id, user_id, title, authors, year, publication_type, journal,
+                  volume, issue, pages, publisher, doi, url, abstract_text,
+                  keywords, pdf_url, created_at, updated_at
+              FROM documents
+              WHERE user_id = $1
+              AND (
+                  title ILIKE $2
+                  OR abstract_text ILIKE $2
+                  OR journal ILIKE $2
+                  OR EXISTS (SELECT 1 FROM unnest(authors) AS author WHERE author ILIKE $2)
+                  OR EXISTS (SELECT 1 FROM unnest(keywords) AS keyword WHERE keyword ILIKE $2)
+              )
+              ORDER BY created_at DESC
+              "#,
+        user_id,
+        search_pattern
+    )
+    .fetch_all(&state.db)
+    .await
+    .map_err(|e| {
+        eprintln!("Search query error: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to search documents"})),
         )
     })?;
 

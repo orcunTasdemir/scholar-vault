@@ -95,7 +95,7 @@ export function AppHeader({
               <button className="rounded-lg hover:bg-accent p-2">
                 {user.profile_image_url ? (
                   <Image
-                    src={`http://10.0.0.57:3000/${user.profile_image_url}`}
+                    src={`http://10.150.200.84:3000/${user.profile_image_url}`}
                     alt={user.username || "User"}
                     width={32}
                     height={32}

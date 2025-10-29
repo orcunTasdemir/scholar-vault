@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://10.0.0.57:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://10.150.200.84:3000";
 
 export interface User {
     id: string;

@@ -176,7 +176,7 @@ export default function ProfilePage() {
             <div className="flex-shrink-0">
               {profileImage ? (
                 <Image
-                  src={`http://10.0.0.57:3000/${profileImage}`}
+                  src={`http://10.150.200.84:3000/${profileImage}`}
                   alt="Profile"
                   width={120}
                   height={120}

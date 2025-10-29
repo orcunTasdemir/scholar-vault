@@ -7,7 +7,7 @@ import { api, Document, Collection } from "@/lib/api";
 import Image from "next/image";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
-import { AppMenubar } from "@/components/layout/AppMenubar";
+import { AppHeader } from "@/components/layout/AppHeader";
 import { FolderTree } from "@/components/FolderTree";
 import { DocumentGrid } from "@/components/documents/DocumentGrid";
 import { CreateFolderDialog } from "@/components/dialog/CreateFolderDialog";
@@ -70,6 +70,7 @@ export default function DashboardPage() {
       try {
         const docs = await api.getDocuments(token);
         setDocuments(docs);
+        console.log("📄 Fetched documents:", documents);
       } catch (error) {
         console.error("Failed to fetch documents:", error);
       } finally {
@@ -130,6 +131,15 @@ export default function DashboardPage() {
   // Get displayed documents based on selection
   const displayedDocuments =
     selectedCollectionId === null ? documents : collectionDocuments;
+
+  // console.log("🔍 DEBUG INFO:");
+  // console.log("  - documents:", documents);
+  // console.log("  - documents.length:", documents.length);
+  // console.log("  - displayedDocuments:", displayedDocuments);
+  // console.log("  - displayedDocuments.length:", displayedDocuments.length);
+  // console.log("  - isLoading:", isLoading);
+  // console.log("  - selectedCollectionId:", selectedCollectionId);
+
   const selectedCollection = collections.find(
     (c) => c.id === selectedCollectionId
   );
@@ -360,156 +370,93 @@ export default function DashboardPage() {
     }
   };
 
+  console.log("🎨 RENDER - Component state:");
+  console.log("  - documents:", documents);
+  console.log("  - documents.length:", documents.length);
+  console.log("  - isLoading:", isLoading);
+  console.log("  - user:", user);
+  console.log("  - token:", !!token);
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Menubar */}
-      <AppMenubar
-        selectedCollectionId={selectedCollectionId}
-        selectedDocuments={[]} // TODO: Implement multi-select later
-        collectionName={selectedCollection?.name}
-        onUploadPDF={() => document.getElementById("file-upload")?.click()}
+    <SidebarProvider defaultOpen={true} className="flex flex-col">
+      {/* Unified Header */}
+      <AppHeader
+        user={user}
+        onUploadClick={() => document.getElementById("file-upload")?.click()}
         onCreateFolder={() => setCreateFolderOpen(true)}
-        onRenameFolder={() =>
-          selectedCollectionId && handleRenameFolder(selectedCollectionId)
-        }
-        onDeleteFolder={() =>
-          selectedCollectionId && handleDeleteFolder(selectedCollectionId)
-        }
-        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        onDeleteDocuments={() => {}} // TODO: Implement later
-        onAddToCollection={() => {}} // TODO: Implement later
-        onExport={() => {}} // TODO: Implement later
+        onLogout={logout}
       />
+      {/* Sidebar + Main Content */}
+      <div className="flex-1 flex overflow-hidden h-[calc(100vh-4rem)]">
+        <AppSidebar>
+          <FolderTree
+            collections={collections}
+            selectedCollectionId={selectedCollectionId}
+            onSelectCollection={handleSelectCollection}
+            onCreateFolder={() => setCreateFolderOpen(true)}
+            onRenameFolder={handleRenameFolder}
+            onDeleteFolder={handleDeleteFolder}
+          />
+        </AppSidebar>
 
-      {/* Main Layout */}
-      <div className="flex-1 flex">
-        <SidebarProvider defaultOpen={isSidebarOpen}>
-          <AppSidebar>
-            <FolderTree
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto relative z-0">
+          <div className="p-6">
+            {/* Page Header */}
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold font-almendra text-foreground">
+                {selectedCollection?.name || "All Documents"}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                {displayedDocuments.length}{" "}
+                {displayedDocuments.length === 1 ? "document" : "documents"}
+              </p>
+            </div>
+
+            {/* Hidden file input for upload */}
+            <input
+              id="file-upload"
+              type="file"
+              accept=".pdf"
+              onChange={handleFileUpload}
+              disabled={uploadStatus !== "idle"}
+              className="hidden"
+            />
+
+            {/* Upload Error */}
+            {uploadError && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                {uploadError}
+              </div>
+            )}
+
+            {/* Upload Status */}
+            {uploadStatus !== "idle" && (
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                  <span className="text-blue-700">
+                    {uploadStatus === "uploading" && "Uploading file..."}
+                    {uploadStatus === "extracting" && "Extracting metadata..."}
+                    {uploadStatus === "success" && "Upload complete!"}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Document Grid */}
+            <DocumentGrid
+              documents={displayedDocuments}
               collections={collections}
               selectedCollectionId={selectedCollectionId}
-              onSelectCollection={handleSelectCollection}
-              onCreateFolder={() => setCreateFolderOpen(true)}
-              onRenameFolder={handleRenameFolder}
-              onDeleteFolder={handleDeleteFolder}
+              isLoading={
+                selectedCollectionId ? isLoadingCollectionDocs : isLoading
+              }
+              onAddToCollection={handleAddToCollection}
+              onRemoveFromCollection={handleRemoveFromCollection}
+              onDelete={handleDeleteDocument}
             />
-          </AppSidebar>
-
-          {/* Main Content */}
-          <div className="flex-1 flex flex-col">
-            {/* Header */}
-            <header className="border-b bg-background/95 backdrop-blur">
-              <div className="flex items-center justify-between px-6 py-4">
-                <div className="flex items-center gap-4">
-                  <SidebarTrigger />
-                  <div className="flex items-center gap-3">
-                    <Image
-                      src="/logo.png"
-                      alt="ScholarVault"
-                      width={40}
-                      height={40}
-                    />
-                    <div>
-                      <h1 className="text-xl font-bold font-almendra">
-                        ScholarVault
-                      </h1>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedCollection?.name || "All Documents"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* User Menu */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-3 py-2 transition-colors">
-                      {user.profile_image_url ? (
-                        <Image
-                          src={`http://10.0.0.57:3000/${user.profile_image_url}`}
-                          alt={user.username || "User"}
-                          width={32}
-                          height={32}
-                          className="rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                          {(user.username || user.email)
-                            .charAt(0)
-                            .toUpperCase()}
-                        </div>
-                      )}
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium">
-                          {user.username || user.email}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {user.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => router.push("/dashboard")}>
-                      Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => router.push("/dashboard/profile")}
-                    >
-                      Profile Settings
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={logout} className="text-red-600">
-                      Sign out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </header>
-
-            {/* Content Area */}
-            <main className="flex-1 p-6 overflow-auto">
-              {/* Upload Section */}
-              <div className="mb-6">
-                <label className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer transition-colors">
-                  <FileUp className="w-4 h-4" />
-                  {uploadStatus === "uploading" && "Uploading..."}
-                  {uploadStatus === "extracting" && "Extracting metadata..."}
-                  {uploadStatus === "success" && "Success!"}
-                  {uploadStatus === "idle" && "Upload PDF"}
-                  <input
-                    id="file-upload"
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileUpload}
-                    disabled={uploadStatus !== "idle"}
-                    className="hidden"
-                  />
-                </label>
-
-                {uploadError && (
-                  <p className="mt-2 text-sm text-red-600">{uploadError}</p>
-                )}
-              </div>
-
-              {/* Document Grid */}
-              <DocumentGrid
-                documents={displayedDocuments}
-                collections={collections}
-                selectedCollectionId={selectedCollectionId}
-                isLoading={
-                  selectedCollectionId ? isLoadingCollectionDocs : isLoading
-                }
-                onAddToCollection={handleAddToCollection}
-                onRemoveFromCollection={handleRemoveFromCollection}
-                onDelete={handleDeleteDocument}
-              />
-            </main>
           </div>
-        </SidebarProvider>
+        </main>
       </div>
 
       {/* Dialogs */}
@@ -533,6 +480,6 @@ export default function DashboardPage() {
         title={`Delete "${folderToDelete?.name}"?`}
         description="This will permanently delete this collection and all its subfolders. Documents will not be deleted."
       />
-    </div>
+    </SidebarProvider>
   );
 }

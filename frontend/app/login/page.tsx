@@ -46,7 +46,7 @@ export default function LoginPage() {
               <span className="text-lg font-normal">
                 Sign in to&nbsp;&nbsp;
               </span>
-              <span className="font-almendra">ScholarVault</span>
+              <span className="">ScholarVault</span>
             </h2>
           </div>
         </div>

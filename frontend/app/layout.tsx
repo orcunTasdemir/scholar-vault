@@ -1,7 +1,19 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import {
+  Geist,
+  Geist_Mono,
+  Inter,
+  Goudy_Bookletter_1911,
+} from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { Toaster } from "@/components/ui/sonner";
+
+export const logoFont = Goudy_Bookletter_1911({
+  variable: "--font-logo",
+  subsets: ["latin"],
+  weight: "400",
+});
 
 export const displayFont = Inter({
   variable: "--font-display",
@@ -33,10 +45,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${displayFont.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${displayFont.variable} ${logoFont.variable} antialiased`}
       >
         <div className="fixed inset-0 bg-[url(../public/background.png)] bg-cover opacity-80 -z-1"></div>
         <AuthProvider>{children}</AuthProvider>
+        <Toaster />
       </body>
     </html>
   );

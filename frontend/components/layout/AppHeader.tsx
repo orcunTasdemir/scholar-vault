@@ -37,36 +37,36 @@ export function AppHeader({
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
-    <header className="sticky top-0 z-50 w-full h-16 border-b bg-background shrink-0">
+    <header className="sticky top-0 z-50 w-full border-b border-gray-100/20 h-16 shrink-0">
       <div className="flex h-full items-center gap-4 px-6 w-full max-w-full">
         {/* LEFT: Sidebar Toggle + Logo */}
-        <div className="flex items-center gap-3">
+        <div className="flex basis-1/3 items-center gap-3">
           <SidebarTrigger />
           <div
             className="flex items-center gap-2 cursor-pointer"
             onClick={() => router.push("/dashboard")}
           >
             <Image src="/logo.png" alt="ScholarVault" width={32} height={32} />
-            <h1 className="text-xl font-bold font-display hidden sm:block">
+            <h1 className="font-logo text-2xl hidden sm:block ">
               ScholarVault
             </h1>
           </div>
         </div>
 
         {/* CENTER: Search Bar */}
-        <div className="flex-1 max-w-2xl relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="flex-1 basis-1/3 max-w-2xl relative ">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground " />
           <Input
             type="search"
             placeholder="Search documents, authors, keywords..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 bg-gray-100/40"
           />
         </div>
 
         {/* RIGHT: Actions + User Menu */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 ml-auto">
           {/* Upload Button */}
           <Button onClick={onUploadClick} size="sm" className="gap-2">
             <Upload className="h-4 w-4" />

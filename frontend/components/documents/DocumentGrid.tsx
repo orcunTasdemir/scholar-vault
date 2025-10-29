@@ -8,16 +8,18 @@ interface DocumentGridProps {
   documents: Document[];
   collections: Collection[];
   selectedCollectionId: string | null;
+  selectedCollectionName: string | null;
   isLoading: boolean;
   onAddToCollection: (documentId: string, collectionId: string) => void;
-  onRemoveFromCollection: (e: React.MouseEvent, documentId: string) => void;
-  onDelete: (e: React.MouseEvent, documentId: string) => void;
+  onRemoveFromCollection: (documentId: string) => void;
+  onDelete: (documentId: string) => void;
 }
 
 export function DocumentGrid({
   documents,
   collections,
   selectedCollectionId,
+  selectedCollectionName,
   isLoading,
   onAddToCollection,
   onRemoveFromCollection,
@@ -74,6 +76,7 @@ export function DocumentGrid({
           document={doc}
           collections={collections}
           selectedCollectionId={selectedCollectionId}
+          selectedCollectionName={selectedCollectionName}
           onAddToCollection={onAddToCollection}
           onRemoveFromCollection={onRemoveFromCollection}
           onDelete={onDelete}

@@ -56,6 +56,7 @@
     --font-sans: var(--font-geist-sans);
     --font-mono: var(--font-geist-mono);
     --font-display: var(--font-display);
+    --font-logo: var(--font-logo);
 
     /* -------- Layout -------- */
     --header-height: 3rem; /* 48px */
@@ -177,6 +178,7 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-display);
+  --font-logo: var(--font-logo);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

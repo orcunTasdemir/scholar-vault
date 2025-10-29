@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FileUp } from "lucide-react";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -219,9 +220,10 @@ export default function DashboardPage() {
     try {
       const newCollection = await api.createCollection(token, name, null);
       setCollections((prev) => [...prev, newCollection]);
+      toast.success(`Collection "${name}" created`);
     } catch (error) {
       console.error("Failed to create folder:", error);
-      alert("Failed to create folder");
+      toast.error("Failed to create collection");
     }
   };
 
@@ -249,9 +251,10 @@ export default function DashboardPage() {
       setCollections((prev) =>
         prev.map((c) => (c.id === folderToRename.id ? updatedCollection : c))
       );
+      toast.success(`Collection renamed to "${newName}"`);
     } catch (error) {
       console.error("Failed to rename folder:", error);
-      alert("Failed to rename folder");
+      toast.error("Failed to rename collection");
     }
   };
 
@@ -274,9 +277,10 @@ export default function DashboardPage() {
       if (selectedCollectionId === folderToDelete.id) {
         setSelectedCollectionId(null);
       }
+      toast.success(`Collection "${folderToDelete.name}" deleted`);
     } catch (error) {
       console.error("Failed to delete folder:", error);
-      alert("Failed to delete folder");
+      toast.error("Failed to delete collection");
     }
   };
 
@@ -295,36 +299,25 @@ export default function DashboardPage() {
     try {
       await api.addDocumentToCollection(token, collectionId, documentId);
 
+      // Find collection name for toast
+      const collection = collections.find((c) => c.id === collectionId);
+      if (collection) {
+        toast.success(`Successfully added to "${collection.name}"`);
+      }
+
       if (selectedCollectionId === collectionId) {
         const docs = await api.getCollectionDocuments(token, collectionId);
         setCollectionDocuments(docs);
       }
     } catch (error) {
       console.error("Failed to add document to collection:", error);
-      alert("Failed to add document to collection");
+      toast.error("Failed to add document to collection");
     }
   };
 
   // Handler: Remove from collection
-  const handleRemoveFromCollection = async (
-    e: React.MouseEvent,
-    documentId: string
-  ) => {
-    e.stopPropagation();
-
+  const handleRemoveFromCollection = async (documentId: string) => {
     if (!selectedCollectionId || !token) return;
-
-    const collectionName = collections.find(
-      (c) => c.id === selectedCollectionId
-    )?.name;
-
-    if (
-      !window.confirm(
-        `Remove this document from "${collectionName}"? The document will still exist in "All Documents".`
-      )
-    ) {
-      return;
-    }
 
     try {
       await api.removeDocumentFromCollection(
@@ -335,27 +328,15 @@ export default function DashboardPage() {
       setCollectionDocuments((prev) =>
         prev.filter((doc) => doc.id !== documentId)
       );
+      toast.success("Document removed from collection");
     } catch (error) {
       console.error("Remove from collection error:", error);
-      alert("Failed to remove document from collection");
+      toast.error("Failed to remove document from collection");
     }
   };
 
   // Handler: Delete document
-  const handleDeleteDocument = async (
-    e: React.MouseEvent,
-    documentId: string
-  ) => {
-    e.stopPropagation();
-
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this document permanently?"
-      )
-    ) {
-      return;
-    }
-
+  const handleDeleteDocument = async (documentId: string) => {
     if (!token) return;
 
     try {
@@ -364,9 +345,10 @@ export default function DashboardPage() {
       setCollectionDocuments((prev) =>
         prev.filter((doc) => doc.id !== documentId)
       );
+      toast.success("Document deleted permanently");
     } catch (error) {
       console.error("Delete error:", error);
-      alert("Failed to delete document");
+      toast.error("Failed to delete document");
     }
   };
 
@@ -448,6 +430,7 @@ export default function DashboardPage() {
               documents={displayedDocuments}
               collections={collections}
               selectedCollectionId={selectedCollectionId}
+              selectedCollectionName={selectedCollection?.name || null}
               isLoading={
                 selectedCollectionId ? isLoadingCollectionDocs : isLoading
               }

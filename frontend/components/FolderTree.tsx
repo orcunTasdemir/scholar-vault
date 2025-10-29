@@ -137,7 +137,7 @@ export function FolderTree({
         </div>
       </div>
       <div className="py-3">
-        <span className="font-almendra font-bold text-xl">Collections</span>
+        <span className=" font-bold text-xl">Collections</span>
       </div>
 
       {rootFolders.map((folder) => renderFolder(folder))}

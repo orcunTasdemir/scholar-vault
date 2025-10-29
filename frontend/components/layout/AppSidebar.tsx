@@ -15,20 +15,14 @@ interface AppSidebarProps {
 
 export function AppSidebar({ children }: AppSidebarProps) {
   return (
-    <Sidebar
-      collapsible="offcanvas"
-      className="border-r border-border bg-background top-16"
-      style={{ pointerEvents: "auto" }}
-    >
-      <SidebarContent className="pt-0" style={{ pointerEvents: "auto" }}>
+    <Sidebar collapsible="offcanvas" className="border-r top-16">
+      <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="px-4 pt-4 pb-2 text-lg font-almendra font-bold text-foreground">
+          {/* <SidebarGroupLabel className="px-4 pt-4 pb-2 text-lg font-almendra font-bold">
             Collections
-          </SidebarGroupLabel>
-          <SidebarGroupContent style={{ pointerEvents: "auto" }}>
-            <SidebarMenu style={{ pointerEvents: "auto" }}>
-              {children}
-            </SidebarMenu>
+          </SidebarGroupLabel> */}
+          <SidebarGroupContent>
+            <SidebarMenu>{children}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

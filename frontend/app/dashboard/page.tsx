@@ -399,11 +399,11 @@ export default function DashboardPage() {
         </AppSidebar>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto relative z-0">
+        <main className="flex-1 overflow-auto">
           <div className="p-6">
             {/* Page Header */}
             <div className="mb-6">
-              <h2 className="text-2xl font-bold font-almendra text-foreground">
+              <h2 className="text-2xl font-bold font-display">
                 {selectedCollection?.name || "All Documents"}
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
@@ -424,14 +424,14 @@ export default function DashboardPage() {
 
             {/* Upload Error */}
             {uploadError && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              <div className="mb-4 p-4 bg-red-50 border-red-200 rounded-lg text-red-700">
                 {uploadError}
               </div>
             )}
 
             {/* Upload Status */}
             {uploadStatus !== "idle" && (
-              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="mb-4 p-4 bg-blue-50 border-blue-200 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
                   <span className="text-blue-700">

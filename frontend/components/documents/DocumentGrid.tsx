@@ -29,7 +29,7 @@ export function DocumentGrid({
       <div className="flex items-center justify-center py-16">
         <div className="text-center">
           <div className="animate-spin h-12 w-12 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading documents...</p>
+          <p className="text-muted-foreground">Loading documents...</p>
         </div>
       </div>
     );
@@ -38,7 +38,7 @@ export function DocumentGrid({
   // Empty state
   if (documents.length === 0) {
     return (
-      <div className="text-center py-16 bg-gray-50/50 rounded-lg border-2 border-dashed border-gray-300">
+      <div className="text-center py-16 rounded-lg border-2 border-dashed">
         <Image
           src="/logo.png"
           alt="No documents"
@@ -46,18 +46,18 @@ export function DocumentGrid({
           height={64}
           className="mx-auto opacity-50"
         />
-        <h3 className="mt-4 text-lg font-semibold text-gray-900">
+        <h3 className="mt-4 text-lg font-semibold">
           {selectedCollectionId
             ? "No documents in this collection"
             : "No documents yet"}
         </h3>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-muted-foreground">
           {selectedCollectionId
             ? "Add documents to this collection to see them here."
             : "Get started by uploading your first research document."}
         </p>
         {!selectedCollectionId && (
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-muted-foreground">
             We&apos;ll automatically extract metadata from your PDFs!
           </p>
         )}

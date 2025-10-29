@@ -51,14 +51,13 @@ export function FolderTree({
     const isSelected = selectedCollectionId === collection.id;
 
     return (
-      <div key={collection.id} className="flex flex-col w-full">
+      <div key={collection.id} className="flex flex-col">
         <div
           className={`flex items-center gap-2 py-2 px-3 cursor-pointer hover:bg-gray-100 ${
             isSelected ? "bg-blue-50 border-l-4 border-blue-600" : ""
           }`}
           style={{
             paddingLeft: `${level * 20 + 12}px`,
-            minWidth: "max-content",
           }}
           onClick={() => onSelectCollection(collection.id)}
         >
@@ -68,35 +67,41 @@ export function FolderTree({
                 e.stopPropagation();
                 toggleExpand(collection.id);
               }}
-              className="w-4 h-4 flex items-center justify-center text-gray-600"
+              className="w-4 h-4 flex items-center justify-center shrink-0"
             >
               {isExpanded ? "▼" : "▶"}
             </button>
           )}
-          {!hasChildren && <span className="w-4" />}
-          <span className="mr-2">
-            {isSelected ? <BookOpen /> : <BookMarked />}
+          {!hasChildren && <span className="w-4 shrink-0" />}
+          <span className="shrink-0">
+            {isSelected ? (
+              <BookOpen className="w-4 h-4" />
+            ) : (
+              <BookMarked className="w-4 h-4" />
+            )}
           </span>
-          <span className="flex-1 text-sm">{collection.name}</span>
+          <span className="flex-1 text-sm truncate" title={collection.name}>
+            {collection.name}
+          </span>
           <button
             onClick={(e) => {
               e.stopPropagation();
               onRenameFolder(collection.id);
             }}
-            className="text-xs text-gray-500 hover:text-gray-700 p-1"
+            className="shrink-0 text-gray-500 hover:text-gray-700 p-1"
             title="Rename"
           >
-            <Pencil className="scale-70" />
+            <Pencil className="w-4 h-4" />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               onDeleteFolder(collection.id);
             }}
-            className="text-xs text-gray-500 hover:text-red-600 p-1"
+            className="shrink-0 text-gray-500 hover:text-red-600 p-1"
             title="Delete"
           >
-            <BookX className="scale-70" />
+            <BookX className="w-4 h-4" />
           </button>
         </div>
         {isExpanded && hasChildren && (
@@ -110,29 +115,32 @@ export function FolderTree({
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="inline-block min-w-[16rem]">
-        <div className="p-4">
-          <button
-            onClick={() => onCreateFolder(null)}
-            className="mt-2 text-lg text-blue-600 hover:text-blue-800"
-          >
-            + New Collection
-          </button>
-        </div>
-        <div
-          className={`py-2 px-3 cursor-pointer hover:bg-gray-100 ${
-            selectedCollectionId === null ? "border-l-4 border-blue-600" : ""
-          }`}
-          onClick={() => onSelectCollection(null)}
-          style={{ minWidth: "max-content" }}
+      {/* <div className="p-4">
+        <button
+          onClick={() => onCreateFolder(null)}
+          className="text-sm text-blue-600 hover:text-blue-800"
         >
-          <div className="flex items-center gap-2 text-sm">
-            <Landmark className="w-4 h-4" />
-            <span className="text-lg">All Documents</span>
-          </div>
+          + New Collection
+        </button>
+      </div> */}
+      <div
+        className={`py-2 px-3 cursor-pointer hover:bg-gray-100 ${
+          selectedCollectionId === null
+            ? "bg-blue-50 border-l-4 border-blue-600"
+            : ""
+        }`}
+        onClick={() => onSelectCollection(null)}
+      >
+        <div className="flex items-center gap-2">
+          <Landmark className="w-4 h-4 shrink-0" />
+          <span className="text-sm font-medium py-2">All Documents</span>
         </div>
-        {rootFolders.map((folder) => renderFolder(folder))}
       </div>
+      <div className="py-3">
+        <span className="font-almendra font-bold text-xl">Collections</span>
+      </div>
+
+      {rootFolders.map((folder) => renderFolder(folder))}
     </div>
   );
 }

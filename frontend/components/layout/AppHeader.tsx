@@ -38,7 +38,7 @@ export function AppHeader({
 
   return (
     <header className="sticky top-0 z-50 w-full h-16 border-b bg-background shrink-0">
-      <div className="flex h-16 items-center gap-4 px-6">
+      <div className="flex h-full items-center gap-4 px-6 w-full max-w-full">
         {/* LEFT: Sidebar Toggle + Logo */}
         <div className="flex items-center gap-3">
           <SidebarTrigger />
@@ -46,31 +46,23 @@ export function AppHeader({
             className="flex items-center gap-2 cursor-pointer"
             onClick={() => router.push("/dashboard")}
           >
-            <Image
-              src="/logo.png"
-              alt="ScholarVault"
-              width={32}
-              height={32}
-              className="shrink-0"
-            />
-            <h1 className="text-xl font-bold font-almendra hidden sm:block">
+            <Image src="/logo.png" alt="ScholarVault" width={32} height={32} />
+            <h1 className="text-xl font-bold font-display hidden sm:block">
               ScholarVault
             </h1>
           </div>
         </div>
 
         {/* CENTER: Search Bar */}
-        <div className="flex-1 max-w-2xl">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search documents, authors, keywords..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 w-full"
-            />
-          </div>
+        <div className="flex-1 max-w-2xl relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search documents, authors, keywords..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
         </div>
 
         {/* RIGHT: Actions + User Menu */}
@@ -86,7 +78,7 @@ export function AppHeader({
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
                 <FolderPlus className="h-4 w-4" />
-                <span className="hidden sm:inline">Folder</span>
+                <span className="hidden sm:inline">New Collection</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -100,14 +92,14 @@ export function AppHeader({
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-lg hover:bg-accent p-2 transition-colors">
+              <button className="rounded-lg hover:bg-accent p-2">
                 {user.profile_image_url ? (
                   <Image
                     src={`http://10.0.0.57:3000/${user.profile_image_url}`}
                     alt={user.username || "User"}
                     width={32}
                     height={32}
-                    className="rounded-full object-cover"
+                    className="rounded-full"
                   />
                 ) : (
                   <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold">
@@ -118,13 +110,11 @@ export function AppHeader({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-medium">
                     {user.username || user.email.split("@")[0]}
                   </p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {user.email}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

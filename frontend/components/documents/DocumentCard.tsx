@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AddToCollectionDropdown } from "@/components/AddToCollectionModal";
 import { Collection } from "@/lib/api";
-import { BookPlus, View, CircleX } from "lucide-react";
+import { FolderPlus, Eye, Trash2, Calendar, User, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface DocumentCardProps {
   document: Document;
@@ -32,71 +33,89 @@ export function DocumentCard({
   const isInCollection = selectedCollectionId !== null;
 
   return (
-    <div
-      className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
-      onClick={() => router.push(`/dashboard/documents/${document.id}`)}
-    >
-      {/* Document Info */}
-      <div className="mb-2">
-        <h3 className="font-semibold text-gray-900 line-clamp-2">
-          {document.title}
-        </h3>
-        <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-          <span>📅 {new Date(document.created_at).toLocaleDateString()}</span>
-          {document.authors && document.authors.length > 0 && (
-            <span>
-              👤 {document.authors[0]}
-              {document.authors.length > 1
-                ? ` +${document.authors.length - 1}`
-                : ""}
-            </span>
-          )}
-          {document.year && <span>🗓️ {document.year}</span>}
+    <div className="border rounded-lg bg-white hover:shadow-md transition-shadow group">
+      {/* Document Info - Clickable */}
+      <div
+        className="p-4 cursor-pointer"
+        onClick={() => router.push(`/dashboard/documents/${document.id}`)}
+      >
+        <div className="flex items-start gap-3">
+          <FileText className="w-5 h-5 shrink-0 text-blue-600 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold line-clamp-2 mb-2">{document.title}</h3>
+            <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+              {document.authors && document.authors.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <User className="w-3 h-3 shrink-0" />
+                  <span className="truncate">
+                    {document.authors[0]}
+                    {document.authors.length > 1 && ` +${document.authors.length - 1}`}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-3 h-3 shrink-0" />
+                  <span>{new Date(document.created_at).toLocaleDateString()}</span>
+                </div>
+                {document.year && <span>{document.year}</span>}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Action Buttons */}
+      {/* Action Buttons - Compact */}
       <div
-        className="flex gap-2 mt-4 pt-4 border-t border-gray-200"
+        className="flex items-center gap-1 p-2 border-t bg-gray-50"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
+        <Button
+          size="sm"
+          variant="ghost"
           onClick={(e) => {
             e.stopPropagation();
             router.push(`/dashboard/documents/${document.id}`);
           }}
-          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          className="flex-1"
         >
-          <View className="w-4 h-4" />
-          View
-        </button>
+          <Eye className="w-4 h-4 mr-1" />
+          <span className="hidden sm:inline">View</span>
+        </Button>
 
         {isInCollection ? (
           <>
-            <button
+            <Button
+              size="sm"
+              variant="ghost"
               onClick={(e) => onRemoveFromCollection(e, document.id)}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
+              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+              title="Remove from collection"
             >
-              Remove
-            </button>
-            <button
+              <FolderPlus className="w-4 h-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
               onClick={(e) => onDelete(e, document.id)}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              title="Delete document"
             >
-              <CircleX className="w-4 h-4" />
-              Delete
-            </button>
+              <Trash2 className="w-4 h-4" />
+            </Button>
           </>
         ) : (
           <>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button
+                <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={(e) => e.stopPropagation()}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                  title="Add to collection"
                 >
-                  <BookPlus className="w-4 h-4" />+ Collection
-                </button>
+                  <FolderPlus className="w-4 h-4" />
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <AddToCollectionDropdown
@@ -108,13 +127,15 @@ export function DocumentCard({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <button
+            <Button
+              size="sm"
+              variant="ghost"
               onClick={(e) => onDelete(e, document.id)}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              title="Delete document"
             >
-              <CircleX className="w-4 h-4" />
-              Delete
-            </button>
+              <Trash2 className="w-4 h-4" />
+            </Button>
           </>
         )}
       </div>

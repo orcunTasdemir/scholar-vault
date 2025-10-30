@@ -42,5 +42,9 @@ pub fn create_routes(state: AppState) -> Router {
         .route("/api/documents/{id}", get(handlers::get_document))
         .route("/api/documents/{id}", put(handlers::update_document))
         .route("/api/documents/{id}", delete(handlers::delete_document))
+        .route(
+            "/api/documents/{id}/chat",
+            post(handlers::chat_with_document),
+        )
         .with_state(state)
 }

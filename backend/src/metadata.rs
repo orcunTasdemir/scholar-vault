@@ -263,6 +263,15 @@ fn extract_text_from_pdf(pdf_path: &str) -> Result<String, String> {
     Ok(truncated.to_string())
 }
 
+pub fn extract_full_pdf_text(pdf_path: &str) -> Result<String, String> {
+    let bytes = std::fs::read(pdf_path).map_err(|e| format!("Failed to read PDF: {}", e))?;
+
+    let text = pdf_extract::extract_text_from_mem(&bytes)
+        .map_err(|e| format!("Failed to extract text from PDF: {}", e))?;
+
+    Ok(text)
+}
+
 fn extract_doi_from_text(text: &str) -> Option<String> {
     // DOI regex pattern - matches common DOI formats
     let doi_pattern = regex::Regex::new(r"10\.\d{4,9}/[-._;()/:A-Za-z0-9]+").ok()?;
@@ -407,4 +416,70 @@ If you cannot find a field, use null. The title field is required (use empty str
         .map_err(|e| format!("Failed to parse metadata JSON: {}. Content: {}", e, content))?;
 
     Ok(metadata)
+}
+
+pub async fn chat_with_paper(
+    paper_title: &str,
+    pdf_text: &str,
+    user_message: &str,
+) -> Result<String, String> {
+    let api_key = env::var("OPENAI_API_KEY").map_err(|_| "OPENAI_API_KEY not set".to_string())?;
+
+    // Truncate PDF text to avoid token limits (keep first 8000 chars for context)
+    let truncated_text = if pdf_text.len() > 8000 {
+        &pdf_text[..8000]
+    } else {
+        pdf_text
+    };
+
+    let system_prompt = format!(
+        r#"You are the author/researcher of the academic paper titled "{}". 
+You have deep knowledge of this paper and can answer questions about it.
+Answer questions based on the paper's content, methodology, findings, and implications.
+Be helpful, accurate, and conversational.
+
+Paper content:
+{}"#,
+        paper_title, truncated_text
+    );
+
+    let request = OpenAIRequest {
+        model: "gpt-4o-mini".to_string(),
+        messages: vec![
+            Message {
+                role: "system".to_string(),
+                content: system_prompt,
+            },
+            Message {
+                role: "user".to_string(),
+                content: user_message.to_string(),
+            },
+        ],
+        temperature: 0.7,
+    };
+
+    let client = reqwest::Client::new();
+    let response = client
+        .post("https://api.openai.com/v1/chat/completions")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .header("Content-Type", "application/json")
+        .json(&request)
+        .send()
+        .await
+        .map_err(|e| format!("OpenAI request failed: {}", e))?;
+
+    let response_data: OpenAIResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse OpenAI response: {}", e))?;
+
+    let content = response_data
+        .choices
+        .first()
+        .ok_or("No response from OpenAI")?
+        .message
+        .content
+        .clone();
+
+    Ok(content)
 }

@@ -20,6 +20,16 @@ pub struct SearchQuery {
     pub q: String,
 }
 
+#[derive(serde::Deserialize)]
+pub struct ChatRequest {
+    pub message: String,
+}
+
+#[derive(serde::Serialize)]
+pub struct ChatResponse {
+    pub response: String,
+}
+
 pub async fn health_check() -> Json<Value> {
     Json(json!({
         "status": "healthy",
@@ -1269,4 +1279,86 @@ pub async fn search_documents(
 })?;
 
     Ok(Json(documents))
+}
+
+pub async fn chat_with_document(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+    Path(document_id): Path<String>,
+    Json(payload): Json<ChatRequest>,
+) -> Result<Json<ChatResponse>, (StatusCode, Json<Value>)> {
+    // Parse Document ID
+    let doc_id = uuid::Uuid::parse_str(&document_id).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": "Invalid document ID"})),
+        )
+    })?;
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    // Fetch doc from database and verify ownership
+    let document = sqlx::query_as!(
+        Document,
+        r#"
+        SELECT id, user_id, title, authors, year, publication_type, journal,
+            volume, issue, pages, publisher, doi, url, abstract_text,
+            keywords, pdf_url, created_at, updated_at
+        FROM documents
+        WHERE id = $1 AND user_id = $2
+        "#,
+        doc_id,
+        user_id
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|e| {
+        eprintln!("Database error: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to fetch document"})),
+        )
+    })?
+    .ok_or_else(|| {
+        (
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "Document not found"})),
+        )
+    })?;
+
+    let pdf_url = document.pdf_url.ok_or_else(|| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": "Document has no PDF"})),
+        )
+    })?;
+
+    // Extract full PDF text
+    let pdf_text = crate::metadata::extract_full_pdf_text(&pdf_url).map_err(|e| {
+        eprintln!("PDF extraction error: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to extract PDF text"})),
+        )
+    })?;
+
+    // Call OpenAI chat
+    let ai_response =
+        crate::metadata::chat_with_paper(&document.title, &pdf_text, &payload.message)
+            .await
+            .map_err(|e| {
+                eprintln!("OpenAI chat error: {}", e);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"error": "Failed to chat with document"})),
+                )
+            })?;
+
+    Ok(Json(ChatResponse {
+        response: ai_response,
+    }))
 }

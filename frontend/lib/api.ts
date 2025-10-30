@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://10.150.200.84:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://10.0.0.57:3000";
 
 export interface User {
     id: string;
@@ -100,6 +100,18 @@ class ApiClient {
 
         if (!response.ok) {
             throw new Error('Failed to fetch documents');
+        }
+        return response.json();
+    }
+
+
+    async searchDocuments(token: string, query: string): Promise<Document[]> {
+        const response = await fetch(`${API_BASE_URL}/api/documents/search?q=${encodeURIComponent(query)}`, {
+            headers: this.getHeaders(token),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to search documents');
         }
         return response.json();
     }

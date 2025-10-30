@@ -46,6 +46,11 @@ export default function DashboardPage() {
   );
   const [isLoadingCollectionDocs, setIsLoadingCollectionDocs] = useState(false);
 
+  // Search State
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchResults, setSearchResults] = useState<Document[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   // Dialog state
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
   const [renameFolderOpen, setRenameFolderOpen] = useState(false);
@@ -129,9 +134,14 @@ export default function DashboardPage() {
     return null;
   }
 
+  const displayedDocuments = isSearching
+    ? searchResults
+    : selectedCollectionId === null
+    ? documents
+    : collectionDocuments;
   // Get displayed documents based on selection
-  const displayedDocuments =
-    selectedCollectionId === null ? documents : collectionDocuments;
+  // const displayedDocuments =
+  //   selectedCollectionId === null ? documents : collectionDocuments;
 
   // console.log("🔍 DEBUG INFO:");
   // console.log("  - documents:", documents);
@@ -160,7 +170,7 @@ export default function DashboardPage() {
 
     try {
       const response = await fetch(
-        "http://10.150.200.84:3000/api/documents/upload",
+        "http://10.0.0.57:3000/api/documents/upload",
         {
           method: "POST",
           headers: {
@@ -284,9 +294,37 @@ export default function DashboardPage() {
     }
   };
 
+  // Search Handler
+  const handleSearch = async (query: string) => {
+    if (!token) return;
+
+    setSearchQuery(query);
+
+    if (!query.trim()) {
+      // clear search
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+
+    try {
+      const results = await api.searchDocuments(token, query);
+      setSearchResults(results);
+    } catch (error) {
+      console.error("Search error: ", error);
+      toast.error("Failed to search documents");
+      setSearchResults([]);
+    }
+  };
+
   // Handler: Select collection
   const handleSelectCollection = (collectionId: string | null) => {
     setSelectedCollectionId(collectionId);
+    setSearchQuery("");
+    setSearchResults([]);
+    setIsSearching(false);
   };
 
   // Handler: Add to collection
@@ -365,6 +403,7 @@ export default function DashboardPage() {
         user={user}
         onUploadClick={() => document.getElementById("file-upload")?.click()}
         onCreateFolder={() => setCreateFolderOpen(true)}
+        onSearch={handleSearch}
         onLogout={logout}
       />
       {/* Sidebar + Main Content */}
@@ -385,8 +424,10 @@ export default function DashboardPage() {
           <div className="p-6">
             {/* Page Header */}
             <div className="mb-6">
-              <h2 className="text-2xl font-bold font-display">
-                {selectedCollection?.name || "All Documents"}
+              <h2 className="text-2xl font-normal font-display">
+                {isSearching
+                  ? `Search results for "${searchQuery}"`
+                  : selectedCollection?.name || "All Documents"}
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
                 {displayedDocuments.length}{" "}

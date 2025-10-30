@@ -1,6 +1,6 @@
 use axum::{
     Json,
-    extract::{Multipart, Path, State},
+    extract::{Multipart, Path, Query, State},
     http::StatusCode,
 };
 use serde_json::{Value, json};
@@ -15,8 +15,9 @@ use crate::{
     state::{self, AppState},
 };
 
+#[derive(serde::Deserialize)]
 pub struct SearchQuery {
-    q: String,
+    pub q: String,
 }
 
 pub async fn health_check() -> Json<Value> {
@@ -1229,37 +1230,43 @@ pub async fn search_documents(
         )
     })?;
 
-    let search_pattern = format!("%{}%", params.q);
+    let search_pattern = params.q.clone(); // No need for % wildcards with fuzzy search
 
     let documents = sqlx::query_as!(
-        Document,
-        r#"
-              SELECT id, user_id, title, authors, year, publication_type, journal,
-                  volume, issue, pages, publisher, doi, url, abstract_text,
-                  keywords, pdf_url, created_at, updated_at
-              FROM documents
-              WHERE user_id = $1
-              AND (
-                  title ILIKE $2
-                  OR abstract_text ILIKE $2
-                  OR journal ILIKE $2
-                  OR EXISTS (SELECT 1 FROM unnest(authors) AS author WHERE author ILIKE $2)
-                  OR EXISTS (SELECT 1 FROM unnest(keywords) AS keyword WHERE keyword ILIKE $2)
-              )
-              ORDER BY created_at DESC
-              "#,
-        user_id,
-        search_pattern
+    Document,
+    r#"
+    SELECT id, user_id, title, authors, year, publication_type, journal,
+        volume, issue, pages, publisher, doi, url, abstract_text,
+        keywords, pdf_url, created_at, updated_at
+    FROM documents
+    WHERE user_id = $1
+    AND (
+        word_similarity($2, COALESCE(title, '')) > 0.3
+        OR word_similarity($2, COALESCE(abstract_text, '')) > 0.3
+        OR word_similarity($2, COALESCE(journal, '')) > 0.3
+        OR EXISTS (SELECT 1 FROM unnest(authors) AS author WHERE word_similarity($2, author) > 0.3)
+        OR EXISTS (SELECT 1 FROM unnest(keywords) AS keyword WHERE word_similarity($2, keyword) > 0.3)
     )
-    .fetch_all(&state.db)
-    .await
-    .map_err(|e| {
-        eprintln!("Search query error: {}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"error": "Failed to search documents"})),
-        )
-    })?;
+    ORDER BY 
+        GREATEST(
+            word_similarity($2, COALESCE(title, '')),
+            word_similarity($2, COALESCE(abstract_text, '')),
+            word_similarity($2, COALESCE(journal, ''))
+        ) DESC,
+        created_at DESC
+    "#,
+    user_id,
+    search_pattern
+)
+.fetch_all(&state.db)
+.await
+.map_err(|e| {
+    eprintln!("Search query error: {}", e);
+    (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Json(json!({"error": "Failed to search documents"})),
+    )
+})?;
 
     Ok(Json(documents))
 }

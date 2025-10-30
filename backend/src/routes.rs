@@ -37,6 +37,7 @@ pub fn create_routes(state: AppState) -> Router {
         )
         .route("/api/documents", post(handlers::create_document))
         .route("/api/documents", get(handlers::get_user_documents))
+        .route("/api/documents/search", get(handlers::search_documents))
         .route("/api/documents/upload", post(upload_pdf))
         .route("/api/documents/{id}", get(handlers::get_document))
         .route("/api/documents/{id}", put(handlers::update_document))

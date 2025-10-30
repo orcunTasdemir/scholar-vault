@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, Document } from "@/lib/api";
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://10.150.200.84:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://10.0.0.57:3000";
 
 import Image from "next/image";
 

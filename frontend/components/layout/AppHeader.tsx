@@ -24,6 +24,7 @@ interface AppHeaderProps {
   };
   onUploadClick: () => void;
   onCreateFolder: () => void;
+  onSearch: (query: string) => void;
   onLogout: () => void;
 }
 
@@ -31,6 +32,7 @@ export function AppHeader({
   user,
   onUploadClick,
   onCreateFolder,
+  onSearch,
   onLogout,
 }: AppHeaderProps) {
   const router = useRouter();
@@ -54,13 +56,16 @@ export function AppHeader({
         </div>
 
         {/* CENTER: Search Bar */}
-        <div className="flex-1 basis-1/3 max-w-2xl relative ">
+        <div className="flex-1 basis-1/3 max-w-2xl relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground " />
           <Input
             type="search"
             placeholder="Search documents, authors, keywords..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              onSearch(e.target.value);
+            }}
             className="pl-10 bg-gray-100/40"
           />
         </div>
@@ -73,8 +78,17 @@ export function AppHeader({
             <span className="hidden sm:inline">Upload</span>
           </Button>
 
-          {/* New Folder Dropdown */}
-          <DropdownMenu>
+          {/* New Collection Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={onCreateFolder}
+          >
+            <FolderPlus className="h-4 w-4" />
+            <span className="hidden sm:inline">New Collection</span>
+          </Button>
+          {/* <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
                 <FolderPlus className="h-4 w-4" />
@@ -87,7 +101,7 @@ export function AppHeader({
                 New Collection
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu> */}
 
           {/* User Menu */}
           <DropdownMenu>
@@ -95,7 +109,7 @@ export function AppHeader({
               <button className="rounded-lg hover:bg-accent p-2">
                 {user.profile_image_url ? (
                   <Image
-                    src={`http://10.150.200.84:3000/${user.profile_image_url}`}
+                    src={`http://10.0.0.57:3000/${user.profile_image_url}`}
                     alt={user.username || "User"}
                     width={32}
                     height={32}

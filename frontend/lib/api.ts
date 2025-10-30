@@ -116,6 +116,24 @@ class ApiClient {
         return response.json();
     }
 
+
+
+    async chatWithDocument(token: string, documentId: string, message: string): Promise<string> {
+        const response = await fetch(`${API_BASE_URL}/api/documents/${documentId}/chat`, {
+            method: 'POST',
+            headers: this.getHeaders(token),
+            body: JSON.stringify({ message }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to chat with the document');
+        }
+
+
+        const data = await response.json();
+        return data.response;
+    }
+
     async createDocument(token: string, document: Partial<Document>): Promise<Document> {
         const response = await fetch(`${API_BASE_URL}/api/documents`, {
             method: 'POST',

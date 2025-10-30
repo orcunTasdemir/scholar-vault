@@ -1,0 +1,3130 @@
+# ScholarVault - AI-Powered Bibliography Management App
+
+## Project Overview
+Building a production-ready bibliography management application similar to Zotero, with AI-powered features. Target audience: PhD students and researchers.
+
+## Technology Stack
+- **Backend**: Rust with Axum (latest stable)
+- **Frontend**: Next.js 15 with TypeScript (App Router)
+- **Database**: PostgreSQL with SQLx
+- **Authentication**: JWT tokens
+- **Payments**: Stripe (for subscriptions)
+- **File Storage**: S3-compatible storage (for PDFs/documents)
+
+## Project Structure
+scholarvault/ ├── backend/ # Rust Axum API ├── frontend/ # Next.js TypeScript app ├── context.md # This file - conversation context └── .gitignore # Root gitignore
+
+## Product Strategy & Feature Roadmap
+
+### Core User Workflows
+**Primary workflow**: PDF upload → AI extracts metadata → Auto-fills bibliography
+- User uploads PDF from any source (JSTOR, arXiv, etc.)
+- App extracts title, authors, DOI, abstract automatically
+- Minimal manual data entry required
+
+**Future workflow**: Integrated search & browser extension
+- Search academic papers within app (using Semantic Scholar API)
+- Browser extension (like Zotero Connector) for one-click saves from publisher sites
+- Avoids legal issues with automated scraping
+
+### Competitive Landscape
+- **Similar to but competing with**: Zotero, Mendeley, Paperpile, EndNote
+- **Legal**: No monopoly on bibliography managers - multiple competitors exist
+- **Differentiation**: Modern tech stack, AI-powered extraction, better UX, cloud-first design
+- **Key**: Don't copy code (especially Zotero's AGPL code), don't violate publisher ToS
+
+### Development Phases
+**Phase 1 (Current)**: Core Bibliography Management
+1. ✅ Authentication and user management
+2. 🚧 PDF upload and storage (S3)
+3. 🚧 AI-powered metadata extraction (DOI lookup + GPT-4)
+4. 🚧 Document display and manual editing
+5. Collections/folders for organization
+
+**Phase 2**: Enhanced Discovery
+1. Integrated academic search (Semantic Scholar API)
+2. Links to publisher sites (JSTOR, PubMed, arXiv)
+3. Advanced filtering and categorization
+
+**Phase 3**: Automation & Extensions
+1. Chrome extension for one-click saves
+2. Improved AI for metadata extraction
+3. Automatic categorization and tagging
+4. Collaboration features
+
+## Learning Goals
+- Rust async programming with Tokio
+- Axum web framework
+- SQLx database operations
+- Next.js App Router and React Server Components
+- TypeScript best practices
+- Production-ready authentication and payments
+
+## Important Rules
+- **NEVER run code/commands for the user** - Only provide instructions and code snippets that the user will run themselves
+- User wants to execute all commands manually for learning purposes
+- **ALWAYS verify latest versions and information online** - Use WebSearch or WebFetch to check the most recent versions of ANY technology, libraries, frameworks, language editions, and best practices before providing recommendations. Never rely on potentially outdated knowledge
+- **Build code incrementally in small sections** - Do NOT give complete finished files. Provide code step-by-step in manageable chunks
+- **ALWAYS check actual folder structure first** - Use Read/Glob tools to verify the user's actual folder structure before giving file paths or instructions. Do NOT assume structure
+- **Add important corrections to context.md** - When user corrects something important, add it here so it's remembered across sessions
+
+## Technical Decisions Made
+- **Database**: Using SQLx (not Diesel or SeaORM) for async-first, raw SQL with compile-time safety
+  - SQLx provides compile-time query verification against actual database schema
+  - `query_as!` macro automatically maps database rows to Rust structs
+  - Chosen for learning SQL directly and better performance for raw queries
+- **Rust Edition**: 2024 (latest)
+- **Axum Version**: 0.8 (latest stable)
+  - Path parameters use `{id}` syntax (not `:id` from 0.7)
+  - No `async_trait` macro needed (native async trait methods)
+  - `axum-extra` 0.10 for compatibility
+- **Password Hashing**: bcrypt with DEFAULT_COST (2^12 iterations)
+  - One-way hashing (cannot reverse to get original password)
+  - Salt embedded in hash string
+- **JWT Tokens**: 24-hour expiration, HS256 algorithm
+  - Tokens contain Claims (user id, email, expiration)
+  - Verified via custom AuthUser extractor middleware
+
+## Session Log
+
+### Session 1 - Project Initialization (2025-10-21)
+- Created project directory structure (scholarvault/backend, scholarvault/frontend)
+- Created context.md file
+- Initialized Rust backend project with Cargo
+- Added basic Axum + Tokio dependencies
+- Created Hello World Axum server on port 3000
+- Added project structure: routes.rs, models.rs, handlers.rs, config.rs, state.rs
+- Added serde/serde_json for JSON serialization
+- Installed and configured PostgreSQL 17.6
+- Created PostgreSQL database "scholarvault"
+- Created PostgreSQL user "ot" with superuser privileges
+- Added SQLx dependencies (with postgres, uuid, chrono, migrate features)
+- Installed sqlx-cli tool
+- Created .env file with DATABASE_URL and JWT_SECRET
+- Created first migration: users table with UUID, email, password_hash, full_name, timestamps
+- Created indexes and triggers for auto-updating updated_at
+- Ran migrations successfully
+- Updated models.rs with User and CreateUser structs
+- Updated config.rs to load .env and create PgPool connection pool
+- Created AppState to share database pool across routes
+- Updated main.rs to initialize database connection on startup
+- Updated routes.rs to accept AppState
+
+## Current Status
+- **Phase**: Core Features Complete - Authentication + Document Management
+- **What Works**:
+  - ✅ Database connected with connection pool (PostgreSQL 17.6)
+  - ✅ Axum 0.8 server running on port 3000
+  - ✅ User registration with bcrypt password hashing
+  - ✅ User login with JWT token generation (24-hour expiration)
+  - ✅ JWT verification middleware (AuthUser extractor)
+  - ✅ Protected routes working (requires valid JWT)
+  - ✅ Document CRUD operations (Create, Read, Delete)
+  - ✅ Documents linked to users (each user sees only their documents)
+  - ✅ Full bibliography metadata support (authors, year, journal, DOI, etc.)
+
+- **Current Files**:
+  - main.rs: Entry point, initializes DB pool and AppState
+  - state.rs: AppState struct holding DB pool and JWT secret
+  - config.rs: Loads .env, creates PgPool
+  - models.rs: User, CreateUser, LoginRequest, LoginResponse, UserResponse, Claims, Document, CreateDocument, UpdateDocument
+  - handlers.rs: health_check, register_user, login_user, get_current_user, create_document, get_user_documents, get_document, delete_document
+  - routes.rs: All auth and document routes
+  - auth.rs: create_jwt, verify_jwt
+  - middleware.rs: AuthUser extractor (implements FromRequestParts for Axum 0.8)
+
+- **Database Tables**:
+  - users: id, email, password_hash, username, timestamps
+  - documents: id, user_id (FK), title, authors[], year, publication_type, journal, volume, issue, pages, publisher, doi, url, abstract, keywords[], pdf_url, timestamps
+
+- **API Endpoints**:
+  - GET /health - Public health check
+  - POST /api/auth/register - Register new user
+  - POST /api/auth/login - Login, returns JWT token
+  - GET /api/user/me - Protected, returns current user info
+  - POST /api/documents - Protected, create document with full metadata (manual entry)
+  - POST /api/documents/upload - Protected, upload PDF file (multipart/form-data)
+  - GET /api/documents - Protected, get all user's documents
+  - GET /api/documents/{id} - Protected, get specific document
+  - PUT /api/documents/{id} - Protected, update document (partial updates with COALESCE)
+  - DELETE /api/documents/{id} - Protected, delete document
+
+- **Dependencies** (Cargo.toml):
+  ```toml
+  axum = "0.8"
+  axum-extra = { version = "0.10", features = ["typed-header"] }
+  tokio = { version = "1", features = ["full"] }
+  serde = { version = "1.0", features = ["derive"] }
+  serde_json = "1.0"
+  sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "migrate"] }
+  uuid = { version = "1.0", features = ["v4", "serde"] }
+  chrono = { version = "0.4", features = ["serde"] }
+  dotenvy = "0.15"
+  bcrypt = "0.15"
+  jsonwebtoken = "9"
+  ```
+
+## Future Improvements (Not Yet Implemented)
+
+### Logging & Observability
+- **Add tracing-subscriber** for logging and debugging
+  - Essential for production environments
+  - Setup: `tracing_subscriber::registry()` with `EnvFilter` and `fmt::layer()`
+  - Use `tracing::info!()`, `tracing::error!()`, etc. throughout code
+  - Reference: https://github.com/tokio-rs/axum/tree/main/examples/tracing-aka-logging
+
+### Error Handling Enhancement
+- **Refactor to custom error types with IntoResponse**
+  - Current approach: Return tuples `(StatusCode, Json<Value>)` - works but repetitive
+  - Better approach: Create `ApiError` enum with `IntoResponse` implementation
+  - Optionally use `thiserror` crate for cleaner error definitions
+  - Benefits: Less `.map_err()` boilerplate, better error messages, easier debugging
+  - Reference: https://github.com/tokio-rs/axum/tree/main/examples/error-handling
+  - Note: `tracing-subscriber` (logging) and `thiserror` (error types) serve different purposes, use both together
+
+### Architecture Patterns Learned
+- **Axum Extractors**: Type-based dependency injection via function signatures
+  - `State<AppState>`: Extracts shared app state
+  - `Json<T>`: Parses JSON body into type T
+  - `Path<T>`: Extracts URL path parameters
+  - `AuthUser`: Custom extractor for JWT verification (implements `FromRequestParts`)
+  - Extractors run BEFORE handler is called
+  - If extraction fails, handler never runs (early return with error)
+
+- **Error Propagation**: Using `?` operator with `.map_err()`
+  - `.map_err()` transforms error type (Result stays Error)
+  - `?` unwraps Ok or returns Err early
+  - Different from `.expect()` which panics on error
+
+- **Middleware Pattern**: AuthUser as authentication guard
+  - Not global - must add to each handler signature that needs protection
+  - Public routes: no `AuthUser` parameter
+  - Protected routes: include `AuthUser(claims): AuthUser`
+
+## Frontend Development (Started 2025-10-21)
+
+### Technology Stack
+- **Next.js 15.5** (stable) - App Router, TypeScript, Tailwind CSS
+- **Port**: 3001 (backend on 3000)
+- **Structure**: src/ directory with app/ for App Router
+- **Styling**: Tailwind CSS
+- **Build tool**: Turbopack (faster dev server)
+
+### Framework Choice Rationale
+- **Why Next.js over SvelteKit/Remix:**
+  - Largest ecosystem and community support
+  - Best learning resources and documentation
+  - Industry standard (Netflix, TikTok, Notion)
+  - Excellent TypeScript support
+  - Perfect for auth-heavy, dashboard-style apps
+  - Good SEO for landing pages
+  - Best job market demand
+
+### Frontend Folder Structure
+```
+frontend/
+├── app/                  # Next.js App Router pages (default from create-next-app)
+│   ├── layout.tsx        # Root layout (wraps app with AuthProvider)
+│   ├── page.tsx          # Home page
+│   ├── login/
+│   │   └── page.tsx      # Login page
+│   └── register/
+│       └── page.tsx      # Register page
+├── contexts/             # React Context providers
+│   └── AuthContext.tsx   # Authentication state management
+└── lib/                  # Utilities
+    └── api.ts            # API client for backend communication
+```
+
+**Note**: `create-next-app@latest` creates `app/` at root (not inside `src/`). We follow the default structure with `lib/` and `contexts/` also at root level.
+
+### File Extension Rules (.ts vs .tsx)
+- **`.ts`** - Pure TypeScript, NO JSX/React components
+  - Use for: utilities, types, API clients, helpers
+  - Example: `api.ts` (just functions and classes)
+- **`.tsx`** - TypeScript + JSX/React components
+  - Use for: React components with JSX syntax (`<Component />`)
+  - Example: `AuthContext.tsx` (has `<AuthContext.Provider>`)
+  - **Important:** If file contains JSX, MUST be `.tsx` or you get parsing errors
+
+### Current Frontend Progress
+- ✅ Initialized Next.js 15 with recommended defaults
+- ✅ TypeScript configured
+- ✅ Tailwind CSS set up (v4 with CSS-first configuration)
+  - Fixed dark mode color override issue in globals.css
+  - Using standard Tailwind color palette (blue, gray, etc.)
+- ✅ CORS added to Rust backend (tower-http)
+  - Allows requests from localhost:3001 to localhost:3000
+  - Development: `allow_origin(Any)`
+  - Production: Should specify exact domain
+- ✅ Created API client (`lib/api.ts`)
+  - Typed interfaces matching Rust backend (User, LoginResponse, Document)
+  - Full implementation of all auth and document endpoints
+  - Changed from `full_name` to `username` field
+- ✅ Created AuthContext (`contexts/AuthContext.tsx`)
+  - React Context for global auth state
+  - JWT token stored in localStorage
+  - Provides: `useAuth()` hook with login, register, logout functions
+  - Auto-loads token on app start
+  - Changed from `fullName` to `username` parameter
+- ✅ **Login Page** (`app/login/page.tsx`) - COMPLETE
+  - Email/password form with validation
+  - Error handling and loading states
+  - Styled with Tailwind CSS
+  - Redirects to /dashboard on success
+  - Link to register page
+- ✅ **Register Page** (`app/register/page.tsx`) - COMPLETE
+  - Username (optional), email, password fields
+  - Changed from "full name" to "username" for better UX
+  - Error handling and loading states
+  - Styled with Tailwind CSS (matches login page design)
+  - Redirects to /dashboard on success
+  - Link to login page
+
+### React Context Pattern Learned
+- **Context** = Global state accessible from any component
+- **Provider** = Wraps app, makes state available to children
+- **Hook** = Function to access context (`useAuth()`)
+- Used for auth because user/token needed everywhere in app
+
+### Tailwind CSS Spacing Utilities Learned
+- `space-y-{n}` - Adds vertical spacing BETWEEN child elements (margin-top on children except first)
+- `py-{n}` - Adds padding on top and bottom of the element itself
+- `my-{n}` - Adds margin on top and bottom of the element itself
+
+### Database Changes (Session 2025-10-22)
+- **Migration Issue**: Edited old migration after it was applied (SQLx hash mismatch)
+  - Solution: Dropped and recreated database with `dropdb` and `createdb`
+  - Lesson: NEVER edit old migrations - always create new ones
+- **Field Rename**: Changed `full_name` to `username` in users table
+  - Updated backend models, handlers, and frontend API/contexts
+  - Database migration preserves existing data (just renames column)
+
+- ✅ **Dashboard Page** (`app/dashboard/page.tsx`) - COMPLETE
+  - Protected route with authentication check
+  - Automatic redirect to /login if not authenticated
+  - Header with user email and logout button
+  - Fetches and displays user's documents from database
+  - Document list with title and upload date
+  - Empty state for when no documents exist
+  - File upload functionality with loading states
+  - Error handling for upload failures
+  - Styled with Tailwind CSS matching login/register design
+
+### Authentication Flow Testing
+- ✅ **End-to-end authentication tested and working:**
+  - User registration → automatic login → redirect to dashboard
+  - Manual login → redirect to dashboard
+  - Logout → redirect to login
+  - Protected route access without auth → redirect to login
+  - JWT token persists in localStorage across page refreshes
+
+### PDF Upload Feature (Session 2025-10-23)
+- ✅ **Backend PDF Upload** - COMPLETE
+  - Added `multipart` feature to Axum for file uploads
+  - Created `backend/uploads/` directory for PDF storage
+  - Implemented `upload_pdf` handler with multipart form data
+  - Generates unique filenames using UUID to prevent conflicts
+  - Stores file path in `pdf_url` database field
+  - User-specific document filtering (documents linked to user_id from JWT)
+  - Route ordering fix: `/api/documents/upload` must come before `/api/documents/{id}`
+
+- ✅ **Code Architecture Refactor** - COMPLETE
+  - Extracted `create_document_internal()` helper function
+  - Single source of truth for document creation logic
+  - `create_document` handler - For manual JSON entry with full metadata
+  - `upload_pdf` handler - For PDF file upload (currently minimal metadata)
+  - Both handlers use `create_document_internal()` internally
+  - Added TODO comment for future AI metadata extraction
+
+- ✅ **Frontend PDF Upload** - COMPLETE
+  - File input with hidden styling (styled label button)
+  - Shows "Uploading..." during upload
+  - Accepts only PDF files (`.pdf`)
+  - FormData upload with JWT authentication
+  - Real-time document list update after successful upload
+  - Error message display for failed uploads
+  - Tested with multiple users - filtering works correctly
+
+### Important Lessons Learned
+- **Rust Compilation**: Changes to Rust code require restarting `cargo run` (compiled language, not interpreted)
+- **Route Ordering in Axum**: Specific routes must come before parameterized routes (`/upload` before `/{id}`)
+- **React Hooks Rules**: All hooks must be called before any conditional returns (early returns)
+- **SQL Aliasing**: Use `AS` to map database columns to Rust field names (e.g., `abstract as abstract_text`)
+
+## Session 3 - Document Editing & AI Metadata Extraction (2025-10-24)
+
+### Docker Development Environment Setup
+- **Issue**: Backend container was exiting immediately with code 0
+  - **Root Cause**: SQLx compile-time verification tried to connect to deleted local database
+  - **Solution**: Regenerated `.sqlx/` cache using Docker postgres, added `SQLX_OFFLINE=true` to Dockerfile
+  - **Dockerfile optimization removed**: Removed dummy `main.rs` caching trick that was causing stale builds
+
+- **Frontend Development Mode**:
+  - Created `frontend/Dockerfile.dev` for hot-reload development
+  - Updated `docker-compose.yml` to mount local files as volumes
+  - Enables instant code changes without rebuilding Docker
+
+- **Environment Variables**:
+  - Created root `.env` file for secrets (gitignored)
+  - `docker-compose.yml` uses `${OPENAI_API_KEY}` from `.env`
+  - Keeps API keys out of version control
+
+### Document Editing Feature - COMPLETE ✅
+Built incrementally in small chunks for learning:
+
+**1. Backend API** (already existed):
+- `PUT /api/documents/{id}` - Update document endpoint
+- Added `getDocument()` and `updateDocument()` methods to `frontend/lib/api.ts`
+
+**2. Edit Page** (`frontend/app/dashboard/documents/[id]/edit/page.tsx`):
+- Dynamic route using Next.js `[id]` folder convention
+- Loads document data with `api.getDocument()`
+- Form fields: title, authors (comma-separated), year, journal
+- Pre-fills form with existing document data
+- Controlled inputs with React state (useState)
+
+**3. Form Submission**:
+- Splits comma-separated authors into array
+- Converts year string to number
+- Calls `api.updateDocument()` with partial updates
+- Redirects to document detail page on success
+- Shows error messages on failure
+
+**4. Edit Button**:
+- Added green "Edit Document" button to document detail page
+- Fixed bracket/JSX structure issues
+- Both Edit and View PDF buttons in flex container
+
+**Key Learning**:
+- Next.js App Router: file system = routing (no manual route registration)
+- Controlled form inputs: state + onChange handlers
+- Incremental development: build small chunks, test frequently
+
+### AI-Powered Metadata Extraction - COMPLETE ✅
+
+**Problem**: Manual data entry for every uploaded PDF is tedious for researchers
+
+**Solution**: Automated metadata extraction with intelligent fallback chain
+
+#### Implementation Architecture:
+
+**New Module**: `backend/src/metadata.rs` (renamed from `ai.rs`)
+
+**Dependencies Added**:
+```toml
+reqwest = { version = "0.12", features = ["json"] }  # HTTP client
+pdf-extract = "0.7"                                  # PDF text extraction
+regex = "1"                                          # DOI pattern matching
+```
+
+**Three-Layer Extraction Strategy**:
+
+1. **DOI + CrossRef Lookup** (Primary - Fast, Free, Accurate)
+   - Extract DOI from PDF text using regex pattern `10\.\d{4,9}/[-._;()/:A-Za-z0-9]+`
+   - Query CrossRef API: `https://api.crossref.org/works/{doi}`
+   - Returns publisher-verified metadata (title, authors, year, journal, abstract, DOI)
+   - Works for ~90% of modern academic papers
+   - **Free API** (no cost, instant response)
+
+2. **OpenAI GPT-4o-mini Analysis** (Fallback - Slower, Costs Money, Still Accurate)
+   - Extract first 4000 characters from PDF
+   - Send to OpenAI with structured prompt asking for JSON metadata
+   - Temperature: 0.0 for consistent results
+   - Returns: title, authors, year, journal, DOI, abstract
+   - Triggers when: no DOI found OR CrossRef returns 404
+
+3. **Manual Editing** (Last Resort)
+   - User can edit any extracted metadata via edit page
+   - Fallback uses filename as title if all else fails
+
+#### How It Works:
+
+```
+PDF Upload
+    ↓
+Extract text from PDF (pdf-extract crate)
+    ↓
+Search for DOI pattern
+    ↓
+┌─────────────┐
+│ DOI found?  │
+└─────────────┘
+    ↓ YES                    ↓ NO
+CrossRef API lookup      Skip to AI
+    ↓
+┌──────────────────┐
+│ CrossRef 200 OK? │
+└──────────────────┘
+    ↓ YES               ↓ NO (404)
+Return metadata     Fall back to AI
+    ↓                       ↓
+                   OpenAI GPT-4o-mini
+                            ↓
+                   Parse JSON response
+                            ↓
+                   Return metadata
+                            ↓
+            Save to database with user_id
+```
+
+#### Code Structure:
+
+- `extract_text_from_pdf()` - Reads PDF bytes, extracts text
+- `extract_doi_from_text()` - Regex search for DOI pattern
+- `lookup_doi_metadata()` - Queries CrossRef API, parses response
+- `analyze_with_openai()` - Sends text to GPT, parses JSON
+- `extract_metadata_from_pdf()` - Main orchestrator function
+
+#### Real-World Testing Results:
+
+**Test Case 1**: Modern paper with DOI
+```
+Found DOI: 10.xxxx/xxxxx
+CrossRef lookup successful!
+Result: Instant, accurate, free ✅
+```
+
+**Test Case 2**: JSTOR paper (DOI: 10.2307/...)
+```
+Found DOI: 10.2307/48821924
+CrossRef returned status: 404 Not Found
+Falling back to AI
+AI extraction successful! ✅
+```
+- JSTOR uses own DOI registry (not in CrossRef)
+- AI fallback handles it correctly
+
+**Test Case 3**: Old paper without DOI
+```
+No DOI found in PDF
+Using AI extraction
+AI extraction successful! ✅
+```
+
+#### Future Improvements (Deferred):
+
+**Option 1**: Add DataCite API fallback
+- Covers research data and datasets
+- Still won't handle JSTOR
+
+**Option 2**: Use doi.org resolver for ALL DOI types
+- Universal resolver that redirects to landing pages
+- Would require scraping/parsing HTML
+- More complex implementation
+
+**Option 3**: Add Semantic Scholar API
+- Good for computer science papers
+- Provides citation counts, references
+
+**Decision**: Keep current implementation (CrossRef + AI fallback)
+- Covers vast majority of papers
+- AI fallback handles edge cases well
+- Can add more sources later if needed
+
+### Docker Configuration Files Created:
+- `frontend/Dockerfile.dev` - Development mode with hot reload
+- `backend/.dockerignore` - Excludes target/, uploads/, .env
+- `frontend/.dockerignore` - Excludes node_modules/, .next/
+- `backend/.env.example` - Documents required environment variables
+- Root `.env` - Stores OPENAI_API_KEY (gitignored)
+
+### Files Modified/Created:
+- `backend/src/metadata.rs` - NEW: DOI extraction + CrossRef + OpenAI
+- `backend/src/handlers.rs` - Updated upload_pdf to use metadata extraction
+- `backend/src/main.rs` - Added `mod metadata;`
+- `backend/Cargo.toml` - Added reqwest, pdf-extract, regex
+- `frontend/app/dashboard/documents/[id]/edit/page.tsx` - NEW: Edit form
+- `frontend/app/dashboard/documents/[id]/page.tsx` - Added Edit button
+- `frontend/lib/api.ts` - Added getDocument() and updateDocument()
+- `docker-compose.yml` - Added OPENAI_API_KEY from .env, frontend dev mode
+- `backend/Dockerfile` - Simplified (removed caching trick), added SQLX_OFFLINE=true
+
+### Technical Decisions Made:
+- **Metadata Extraction Priority**: DOI/CrossRef first (free, accurate), AI second (costs money, slower)
+- **Module Naming**: `metadata.rs` instead of `ai.rs` (reflects dual-source nature)
+- **Frontend Dev Mode**: Use Dockerfile.dev with volume mounts for hot reload
+- **Secrets Management**: Root .env file for docker-compose (gitignored)
+- **Error Handling**: Graceful fallback chain, log each step for debugging
+
+### Key Learnings:
+- **Docker Layer Caching**: Can cause issues with SQLx offline mode, sometimes simpler is better
+- **Next.js File-Based Routing**: Create `[id]/edit/page.tsx` → automatic route registration
+- **CrossRef API**: Free, fast, accurate for most papers, but doesn't cover all DOI registries
+- **DOI Registries**: CrossRef (most), DataCite (data), mEDRA (EU), JSTOR (own registry)
+- **React Controlled Inputs**: State + onChange pattern for forms
+- **Incremental Development**: Build small chunks, test frequently, easier to debug
+
+### UI/UX Improvements Session - COMPLETE ✅
+
+#### 1. Inline PDF Viewer
+**Problem**: Clicking "View PDF" opened new browser tab, disruptive user experience
+
+**Solution**: Inline iframe viewer with toggle
+- Added state: `const [showPDF, setShowPDF] = useState(false);`
+- Toggle button: "Show PDF" / "Hide PDF"
+- Separate "Download PDF" button for saving locally
+- 800px iframe displays PDF on same page
+- Better UX: no context switching
+
+**File**: `frontend/app/dashboard/documents/[id]/page.tsx`
+
+```typescript
+{document.pdf_url && showPDF && (
+  <div className="mt-6">
+    <iframe
+      src={`${API_BASE_URL}/${document.pdf_url}`}
+      className="w-full h-[800px] border border-gray-300 rounded-md"
+      title="PDF Viewer"
+    />
+  </div>
+)}
+```
+
+#### 2. Comprehensive Edit Page Improvements
+**Problem**: Edit page only had 4 basic fields, missing validation
+
+**Solution**: Complete metadata editing form with all 13 fields
+
+**File**: `frontend/app/dashboard/documents/[id]/edit/page.tsx`
+
+**All Fields Added**:
+- Basic Information: title*, authors, year
+- Publication Details: journal, type, volume, issue, pages, publisher
+- Identifiers: DOI, URL
+- Content: keywords, abstract (with character counter)
+
+**Form Layout** - 4 organized sections:
+1. **Basic Information** - Title (required), authors, year
+2. **Publication Details** - Journal, type, volume/issue/pages grid, publisher
+3. **Identifiers** - DOI, URL with validation
+4. **Content** - Keywords, abstract with character counter
+
+**Validation Rules**:
+```typescript
+const validateForm = () => {
+    const errors: {[key: string]: string} = {};
+
+    // Title required
+    if (!title.trim()) {
+        errors.title = "Title is required";
+    }
+
+    // Year range validation
+    if (year) {
+        const yearNum = parseInt(year);
+        if (isNaN(yearNum) || yearNum < 1900 || yearNum > 2100) {
+            errors.year = "Year must be between 1900 and 2100";
+        }
+    }
+
+    // DOI format check
+    if (doi && !doi.match(/^10\.\d{4,}/)) {
+        errors.doi = "DOI should start with 10. followed by numbers";
+    }
+
+    // URL format check
+    if (url && !url.match(/^https?:\/\/.+/)) {
+        errors.url = "URL should start with http:// or https://";
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+};
+```
+
+**Visual Feedback**:
+- Required fields marked with red asterisk (*)
+- Invalid fields get red border: `border-red-500`
+- Error messages displayed below fields in red text
+- Character counter for abstract: `{abstract.length} characters`
+- Responsive grid layouts: `grid-cols-1 md:grid-cols-2`
+
+**Form Submission**:
+- Validates before submission
+- Shows error messages without submitting if invalid
+- Splits comma-separated authors and keywords into arrays
+- Sends all fields to backend with `api.updateDocument()`
+- Redirects to document detail page on success
+
+#### PDF File Storage Flow (Documented)
+
+**Upload Path**:
+1. User uploads PDF via `/api/documents/upload` endpoint
+2. Backend generates UUID filename: `uuid::Uuid::new_v4() + "_" + original_name`
+3. Saves to disk: `uploads/abc123-def456_paper.pdf`
+4. Stores in database: `pdf_url = "uploads/abc123-def456_paper.pdf"` (relative path)
+
+**Retrieval Path**:
+1. Frontend requests document: `api.getDocument(token, id)`
+2. Backend returns: `{ pdf_url: "uploads/abc123-def456_paper.pdf", ... }`
+3. Frontend constructs full URL: `${API_BASE_URL}/${document.pdf_url}`
+4. Result: `http://localhost:3000/uploads/abc123-def456_paper.pdf`
+
+**Backend Static Serving**:
+```rust
+// In main.rs
+use tower_http::services::ServeDir;
+
+let app = Router::new()
+    .nest("/api", api_routes)
+    .nest_service("/uploads", ServeDir::new("uploads"))
+    .with_state(state);
+```
+
+**Key Insights**:
+- `pdf_url` field stores RELATIVE path (not absolute URL)
+- Backend serves via Tower-http's `ServeDir` at `/uploads` route
+- Frontend constructs full URL by prepending API base URL
+- In production: Replace with S3/MinIO URLs
+
+#### Files Modified:
+- `frontend/app/dashboard/documents/[id]/page.tsx` - Inline PDF viewer
+- `frontend/app/dashboard/documents/[id]/edit/page.tsx` - Complete form rewrite with validation
+
+#### Design Patterns Learned:
+- **Form State Management**: 13 individual useState hooks (one per field)
+- **Pre-filling Forms**: Load data, set state in useEffect after fetch
+- **Validation Pattern**: Separate `validateForm()` function, error state object
+- **Responsive Grids**: `grid-cols-1 md:grid-cols-2` for mobile + desktop
+- **Conditional Styling**: Template literals with ternary for dynamic classes
+- **Array Splitting**: `.split(',').map(s => s.trim()).filter(s => s.length > 0)`
+
+## Session 4 - Logo Integration & Large PDF Upload Fix (2025-10-25)
+
+### Logo Integration - COMPLETE ✅
+
+**Context**: User created a logo (open book with red bookmark) and wanted to incorporate it throughout the app.
+
+**Location**: Logo file at `logo.png` in root directory (6.3MB PNG)
+
+**Step 1**: Moved logo to frontend public folder
+```bash
+cp logo.png frontend/public/logo.png
+```
+
+**Step 2**: Added logo to all pages
+
+#### Login Page ([frontend/app/login/page.tsx](frontend/app/login/page.tsx))
+- Added `import Image from "next/image";`
+- Replaced header (lines 35-38) with logo + text:
+```tsx
+<div className="text-center">
+  <div className="flex flex-col items-center gap-4">
+    <Image
+      src="/logo.png"
+      alt="ScholarVault Logo"
+      width={80}
+      height={80}
+      priority
+    />
+    <h2 className="text-3xl font-bold text-gray-900">
+      Sign in to ScholarVault
+    </h2>
+  </div>
+```
+
+#### Register Page ([frontend/app/register/page.tsx](frontend/app/register/page.tsx))
+- Added `import Image from "next/image";`
+- Same pattern as login page
+- Logo above "Create your account" heading
+
+#### Dashboard Header ([frontend/app/dashboard/page.tsx](frontend/app/dashboard/page.tsx))
+- Added `import Image from "next/image";`
+- Logo next to "ScholarVault" text (lines 98-102):
+```tsx
+<div className="flex items-center gap-3">
+  <Image
+    src="/logo.png"
+    alt="ScholarVault Logo"
+    width={48}
+    height={48}
+  />
+  <div>
+    <h1 className="text-2xl font-bold text-gray-900">ScholarVault</h1>
+    <p className="text-sm text-gray-600">
+      Welcome back, {user.username}
+    </p>
+  </div>
+</div>
+```
+
+#### Home Page ([frontend/app/page.tsx](frontend/app/page.tsx))
+- Replaced Next.js logo with ScholarVault logo (lines 7-14)
+- Updated heading text from "To get started..." to "ScholarVault"
+
+#### Document Detail Page ([frontend/app/dashboard/documents/[id]/page.tsx](frontend/app/dashboard/documents/[id]/page.tsx))
+- Added `import Image from "next/image";`
+- Logo in header next to document title (40px size)
+- Fixed button hover bug: changed `hover:bg-blue-100` to `hover:bg-blue-700` on Show PDF button (line 181)
+
+#### Edit Page ([frontend/app/dashboard/documents/[id]/edit/page.tsx](frontend/app/dashboard/documents/[id]/edit/page.tsx))
+- Added `import Image from "next/image";`
+- Logo in header next to "Edit Document" title (40px size)
+
+### UI Styling Improvements - COMPLETE ✅
+
+**Context**: User wanted to work on "easy stuff" (styling) before bed.
+
+#### Document Cards Enhancement ([frontend/app/dashboard/page.tsx](frontend/app/dashboard/page.tsx:160-173))
+Changed from basic border to richer card design:
+```tsx
+<div
+  key={doc.id}
+  onClick={() => router.push(`/dashboard/documents/${doc.id}`)}
+  className="border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 cursor-pointer transition-all bg-white"
+>
+  <h3 className="font-semibold text-gray-900">{doc.title}</h3>
+  <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+    <span>📅 {new Date(doc.created_at).toLocaleDateString()}</span>
+    {doc.authors && doc.authors.length > 0 && (
+      <span>👤 {doc.authors[0]}{doc.authors.length > 1 ? ` +${doc.authors.length - 1}` : ''}</span>
+    )}
+    {doc.year && <span>🗓️ {doc.year}</span>}
+  </div>
+</div>
+```
+
+Features:
+- Hover shadow effect (`hover:shadow-md`)
+- Blue border on hover (`hover:border-blue-300`)
+- Shows first author + count if multiple authors
+- Shows year if available
+- Emoji icons for visual interest
+
+#### Empty State Improvement ([frontend/app/dashboard/page.tsx](frontend/app/dashboard/page.tsx:137-158))
+Changed from simple SVG to richer design:
+```tsx
+<div className="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+  <Image
+    src="/logo.png"
+    alt="No documents"
+    width={64}
+    height={64}
+    className="mx-auto opacity-50"
+  />
+  <h3 className="mt-4 text-lg font-semibold text-gray-900">
+    No documents yet
+  </h3>
+  <p className="mt-2 text-sm text-gray-600">
+    Get started by uploading your first research document.
+  </p>
+  <p className="mt-1 text-xs text-gray-500">
+    We'll automatically extract metadata from your PDFs!
+  </p>
+</div>
+```
+
+Features:
+- Dashed border design (`border-2 border-dashed`)
+- Logo with 50% opacity
+- Three levels of text hierarchy
+- Mentions AI metadata extraction feature
+
+#### Upload Button Enhancement ([frontend/app/dashboard/page.tsx](frontend/app/dashboard/page.tsx:119-128))
+```tsx
+<label className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer inline-block transition-colors shadow-sm hover:shadow">
+  {isUploading ? "⏳ Uploading..." : "📤 Upload PDF"}
+  <input
+    type="file"
+    accept=".pdf"
+    onChange={handleFileUpload}
+    disabled={isUploading}
+    className="hidden"
+  />
+</label>
+```
+
+Features:
+- Emoji icons (hourglass when uploading, upload icon normally)
+- Smooth transition effects (`transition-colors`)
+- Shadow effect that increases on hover
+
+### Large PDF Upload Bug Fix - COMPLETE ✅
+
+**Problem**: 6.3MB Watsky PDF (at `/home/ot/Work/scholarvault/tmp/Watsky-RepresentationNonrepresentationalArts-2013.pdf`) failed to upload with error: "Failed to read file data: Error parsing `multipart/form-data` request"
+
+**Investigation Process**:
+
+1. **Initial hypothesis**: Timeout due to large file + AI processing
+2. **Checked backend logs**: No timeout, immediate failure
+3. **Improved error handling** in [frontend/app/dashboard/page.tsx](frontend/app/dashboard/page.tsx:68-92) to show actual backend error:
+   ```tsx
+   if (!response.ok) {
+     // Try to get the error message from the response
+     const errorData = await response.json().catch(() => null);
+     const errorMessage = errorData?.error || `Upload failed with status ${response.status}`;
+     throw new Error(errorMessage);
+   }
+   ```
+4. **Found root cause**: Axum's `Multipart` extractor has default field size limit (~2MB) that was exceeded
+
+**Why the error occurred**:
+- **Multipart/form-data**: HTTP protocol for uploading files, splits request into "parts" (text fields + binary files)
+- **Axum's multipart parser**: Has built-in safety limits to prevent abuse
+- **Default limit**: ~2MB per field (undocumented)
+- **Our file**: 6.3MB, exceeded the limit
+- **tower-http's RequestBodyLimitLayer**: Set to 50MB but doesn't affect Axum's internal multipart limits
+
+**Solution**: Use Axum's native `DefaultBodyLimit` instead of tower-http's layer
+
+In [backend/src/main.rs](backend/src/main.rs:14-16), changed imports:
+```rust
+// REMOVED:
+use tower_http::limit::RequestBodyLimitLayer;
+
+// ADDED:
+use axum::extract::DefaultBodyLimit;
+```
+
+In [backend/src/main.rs](backend/src/main.rs:34-37), changed layer:
+```rust
+// BEFORE:
+.layer(RequestBodyLimitLayer::new(50 * 1024 * 1024))
+
+// AFTER:
+.layer(DefaultBodyLimit::max(100 * 1024 * 1024))  // 100MB for multipart
+```
+
+**Why this works**:
+- `DefaultBodyLimit` is Axum's native body limit that properly integrates with multipart parsing
+- `RequestBodyLimitLayer` from tower-http doesn't configure Axum's internal multipart limits
+- Increased limit to 100MB to handle large academic PDFs with images
+
+**Result**: Watsky PDF (6.3MB) now uploads successfully ✅
+
+**Attempted chunked reading approach** (later reverted):
+- Initially tried reading multipart data in chunks to bypass limits
+- Added `bytes` crate dependency
+- Changed `field.bytes()` to loop with `field.chunk()`
+- This was unnecessary once `DefaultBodyLimit` fixed the issue
+- Reverted to simpler `field.bytes()` approach
+- Removed `bytes` dependency from Cargo.toml
+
+### Metadata Extraction Logging Issue - IDENTIFIED ⚠️
+
+**Observation from logs**:
+```
+Found DOI: 10.1198/106186007X180336
+CrossRef lookup successful
+AI extraction successful!
+```
+
+**Issues identified**:
+
+1. **Misleading log message**: "AI extraction successful!" prints even when CrossRef succeeds (not AI)
+   - Location: [backend/src/handlers.rs](backend/src/handlers.rs:482)
+   - Should say "Metadata extraction successful!" instead
+   - AI is NOT running when CrossRef succeeds - function returns early (line 87 in metadata.rs)
+
+2. **Missing abstracts from CrossRef**: Many publishers don't include abstracts in CrossRef API
+   - CrossRef returns: title, authors, year, journal, DOI
+   - Abstract often missing (publishers want traffic to their site)
+   - Current behavior: Accept CrossRef data without abstract
+   - Better approach: Run AI to fill missing abstract if CrossRef has no abstract
+
+### Current Metadata Extraction Flow:
+
+```
+PDF Upload
+    ↓
+Extract text from PDF
+    ↓
+Search for DOI in text
+    ↓
+┌──────────────┐
+│ DOI found?   │
+└──────────────┘
+    ↓ YES                           ↓ NO
+Query CrossRef API              Skip to AI
+    ↓
+┌─────────────────────┐
+│ CrossRef 200 OK?    │
+└─────────────────────┘
+    ↓ YES                    ↓ NO (404)
+Return ALL CrossRef      Fall back to AI
+metadata (may miss       for ALL fields
+abstract/keywords)
+```
+
+**Current limitation**: If CrossRef succeeds but has no abstract/keywords, we don't get them at all.
+
+### Files Modified This Session:
+
+**Frontend**:
+- `frontend/app/login/page.tsx` - Added logo
+- `frontend/app/register/page.tsx` - Added logo
+- `frontend/app/dashboard/page.tsx` - Added logo, better document cards, better empty state, better upload button, improved error handling
+- `frontend/app/dashboard/documents/[id]/page.tsx` - Added logo, fixed Show PDF button hover bug
+- `frontend/app/dashboard/documents/[id]/edit/page.tsx` - Added logo
+- `frontend/app/page.tsx` - Replaced Next.js logo with ScholarVault logo
+- `frontend/public/logo.png` - NEW: Logo file (copied from root)
+
+**Backend**:
+- `backend/src/main.rs` - Changed from `RequestBodyLimitLayer` to `DefaultBodyLimit`, increased limit to 100MB
+
+**Not modified** (attempted chunked reading, then reverted):
+- `backend/src/handlers.rs` - Multipart reading remains simple (no chunks)
+- `backend/Cargo.toml` - No `bytes` dependency added
+
+### Design Decisions Made:
+
+- **Logo sizing**: 80px for auth pages (prominent), 48px for dashboard header, 40px for subpages
+- **Multipart handling**: Use Axum's native `DefaultBodyLimit` instead of tower-http layer
+- **File size limit**: 100MB to accommodate large academic PDFs with images
+- **Error handling**: Show actual backend error messages to aid debugging
+- **UI polish**: Add emoji icons, hover effects, shadows for better UX without major redesign
+
+### Technical Learnings:
+
+- **Multipart/form-data**: HTTP protocol for file uploads, splits request into parts with boundaries
+- **Axum multipart limits**: Default field size limit (~2MB) separate from overall body limit
+- **DefaultBodyLimit vs RequestBodyLimitLayer**: Native Axum layer properly configures multipart, tower-http layer doesn't
+- **Next.js Image component**: Requires `priority` prop for above-the-fold images
+- **Error message propagation**: Always parse backend error responses for better debugging
+
+## TODO: Metadata Extraction Improvements (Next Session)
+
+**Goal**: Intelligent metadata extraction that uses free CrossRef when possible, fills gaps with AI
+
+**Current problem**:
+- CrossRef often missing abstract/keywords or other fields, (we want to fill all missing fields with the AI fallback)
+- If CrossRef succeeds, we don't run AI at all
+- Result: Incomplete metadata
+
+**Desired flow**:
+```
+PDF Upload
+    ↓
+Extract text + find DOI
+    ↓
+Try CrossRef (if DOI found)
+    ↓
+┌────────────────────────────┐
+│ CrossRef has all fields?   │
+└────────────────────────────┘
+    ↓ YES                              ↓ NO (missing abstract/keywords)
+Return CrossRef data              Run AI to fill ONLY missing fields
+                                       ↓
+                                  Merge: CrossRef data + AI-extracted missing fields
+```
+
+**Implementation tasks**:
+1. Fix misleading log in [backend/src/handlers.rs](backend/src/handlers.rs:482): "AI extraction successful!" → "Metadata extraction successful!"
+2. Check if CrossRef result has abstract/keywords in [backend/src/metadata.rs](backend/src/metadata.rs:76-103)
+3. If missing fields, run `analyze_with_openai()` to get ONLY those fields
+4. Merge results intelligently (CrossRef priority, AI fills gaps)
+5. Test with three paper types:
+   - Paper with full CrossRef data (abstract included)
+   - Paper with partial CrossRef data (no abstract/keywords)
+   - Paper with no DOI (AI only)
+
+**Benefits**:
+- Saves money (use free CrossRef when possible, minimize OpenAI calls)
+- More complete metadata (AI fills gaps)
+- Better user experience (fewer fields to manually edit)
+
+**File to modify**: `backend/src/metadata.rs` - function `extract_metadata_from_pdf()`
+
+## Session 5 - Metadata Extraction Refactor & Complete Field Support (2025-10-25 continued)
+
+### Smart Metadata Extraction Implementation - COMPLETE ✅
+
+**Context**: Continued from Session 4. Implemented the smart CrossRef + AI gap-filling logic that was planned.
+
+**Goal**: Extract ALL 13 metadata fields using free CrossRef API first, then fill any missing fields with AI.
+
+#### Initial Implementation & Testing
+
+**Step 1**: Implemented smart extraction logic in [backend/src/metadata.rs](backend/src/metadata.rs:76-245)
+
+The new flow:
+```
+PDF Upload
+    ↓
+Extract text + find DOI
+    ↓
+If DOI found → Query CrossRef
+    ↓
+Check which fields are missing
+    ↓
+If any missing → Run AI to fill ONLY those fields
+    ↓
+Merge CrossRef + AI data
+    ↓
+Return complete metadata
+```
+
+**Testing Results**: Worked perfectly! Logs showed:
+- Papers with full CrossRef: No AI call needed (saves money)
+- Papers with partial CrossRef: AI fills only missing fields (e.g., abstract, keywords)
+- Papers without DOI: Full AI extraction
+
+#### Problem Discovered: Incomplete Field Extraction
+
+**Issue**: Only extracting 6 fields (title, authors, year, journal, doi, abstract) but edit form has 13 fields:
+- Missing: publication_type, volume, issue, pages, publisher, url, keywords
+
+**Investigation**:
+- CrossRef API already returns volume, issue, pages, publisher, url, type
+- We just weren't capturing them!
+- Original `ExtractedMetadata` struct was incomplete from the start
+
+**Root Cause**: Initial implementation (Session 3) focused on MVP with core fields, forgot to come back and add the rest.
+
+#### Architecture Decision: Refactor to Use CreateDocument
+
+**Problem**: Two nearly identical structs with duplicate fields:
+- `ExtractedMetadata` (6 fields) - Used for metadata extraction
+- `CreateDocument` (13 fields) - Used to create documents
+
+**Options Considered**:
+
+1. **Expand ExtractedMetadata** - Add all missing fields
+   - ❌ Creates duplication
+   - ❌ Maintenance burden (change fields in two places)
+   - ❌ More code to maintain
+
+2. **Use CreateDocument directly** ✅ CHOSEN
+   - ✅ No duplication - single source of truth
+   - ✅ Simpler - fewer structs
+   - ✅ Professional pattern (common in production Rust)
+   - ✅ Less code overall
+
+3. **Shared trait/base**
+   - ❌ Over-engineering
+   - ❌ Falls into refactoring trap
+
+**Decision**: Delete `ExtractedMetadata`, use `CreateDocument` for extraction results.
+
+#### Refactor Implementation
+
+**Changes made**:
+
+1. **backend/src/metadata.rs**:
+   - Added import: `use crate::models::CreateDocument;`
+   - Deleted `ExtractedMetadata` struct entirely
+   - Updated function signature: `Result<CreateDocument, String>`
+   - Updated `CrossRefMessage` to include `publication_type` and `url`
+   - Initialize with all 13 fields
+   - Check for 12 missing fields (all except DOI which is set explicitly)
+   - Merge logic fills all 13 fields from AI if missing
+   - Updated OpenAI prompt to request all fields
+
+2. **backend/src/metadata.rs - CrossRefMessage** (lines 38-57):
+```rust
+#[derive(Debug, Deserialize)]
+struct CrossRefMessage {
+    title: Option<Vec<String>>,
+    author: Option<Vec<CrossRefAuthor>>,
+    published: Option<CrossRefDate>,
+    #[serde(rename = "container-title")]
+    container_title: Option<Vec<String>>,
+    #[serde(rename = "DOI")]
+    doi: Option<String>,
+    #[serde(rename = "abstract")]
+    abstract_text: Option<String>,
+    volume: Option<String>,
+    issue: Option<String>,
+    page: Option<String>,
+    publisher: Option<String>,
+    #[serde(rename = "type")]
+    publication_type: Option<String>,  // NEW
+    #[serde(rename = "URL")]
+    url: Option<String>,                // NEW
+}
+```
+
+3. **backend/src/metadata.rs - lookup_doi_metadata** (lines 322-337):
+```rust
+Ok(CreateDocument {
+    title: title.unwrap_or_default(),
+    authors: authors,
+    year: year,
+    publication_type: msg.publication_type,  // NEW
+    journal: journal,
+    volume: msg.volume,                      // NEW
+    issue: msg.issue,                        // NEW
+    pages: msg.page,                         // NEW
+    publisher: msg.publisher,                // NEW
+    doi: Some(doi.to_string()),
+    url: msg.url,                            // NEW
+    abstract_text: msg.abstract_text,
+    keywords: None,                          // CrossRef doesn't have keywords
+    pdf_url: None,
+})
+```
+
+4. **backend/src/metadata.rs - OpenAI prompt** (lines 343-368):
+```rust
+let prompt = format!(
+    r#"Extract the following information from this academic paper text. Return ONLY valid JSON with no additional text or markdown formatting.
+
+Paper text:
+{}
+
+Return JSON in this exact format:
+{{
+  "title": "paper title",
+  "authors": ["Author One", "Author Two"],
+  "year": 2024,
+  "publication_type": "journal-article",
+  "journal": "Journal Name",
+  "volume": "12",
+  "issue": "3",
+  "pages": "45-67",
+  "publisher": "Publisher Name",
+  "doi": "10.xxxx/xxxxx",
+  "url": "https://doi.org/10.xxxx/xxxxx",
+  "abstract_text": "abstract text",
+  "keywords": ["keyword1", "keyword2", "keyword3"]
+}}
+
+If you cannot find a field, use null. The title field is required (use empty string if unknown). Do not include any text before or after the JSON."#,
+    pdf_text
+);
+```
+
+5. **backend/src/handlers.rs** (lines 478-510):
+Simplified from destructuring 6 fields to directly using `CreateDocument`:
+
+```rust
+let mut metadata = match crate::metadata::extract_metadata_from_pdf(&file_path).await {
+    Ok(metadata) => {
+        println!("Metadata extraction successful!");
+        metadata
+    }
+    Err(e) => {
+        eprintln!("Metadata extraction failed: {}. Using filename as fallback.", e);
+        CreateDocument {
+            title: file_name.clone(),
+            authors: None,
+            year: None,
+            publication_type: None,
+            journal: None,
+            volume: None,
+            issue: None,
+            pages: None,
+            publisher: None,
+            doi: None,
+            url: None,
+            abstract_text: None,
+            keywords: None,
+            pdf_url: None,
+        }
+    }
+};
+
+// Set the PDF path
+metadata.pdf_url = Some(file_path);
+
+let document = create_document_internal(&state, user_id, metadata).await?;
+```
+
+**Result**: Cleaner code, ~50 lines removed, single source of truth for document fields.
+
+#### Frontend Updates
+
+**Added missing fields to document detail page**:
+
+In [frontend/app/dashboard/documents/[id]/page.tsx](frontend/app/dashboard/documents/[id]/page.tsx:95-174):
+
+Added display for:
+- Volume
+- Issue
+- Pages
+- Publisher
+- Keywords (styled as blue pill badges)
+
+Keywords display code:
+```tsx
+{document.keywords && document.keywords.length > 0 && (
+  <div className="mt-6">
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Keywords
+    </label>
+    <div className="flex flex-wrap gap-2">
+      {document.keywords.map((keyword, index) => (
+        <span
+          key={index}
+          className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+        >
+          {keyword}
+        </span>
+      ))}
+    </div>
+  </div>
+)}
+```
+
+**Added delete functionality to dashboard**:
+
+In [frontend/app/dashboard/page.tsx](frontend/app/dashboard/page.tsx):
+
+Added delete handler:
+```tsx
+const handleDeleteDocument = async (
+  e: React.MouseEvent,
+  documentId: string
+) => {
+  e.stopPropagation(); // Prevent card click
+
+  if (!window.confirm("Are you sure you want to delete this document?")) {
+    return;
+  }
+
+  if (!token) return;
+
+  try {
+    await api.deleteDocument(token, documentId);
+    setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
+  } catch (error) {
+    console.error("Delete error:", error);
+    alert("Failed to delete document");
+  }
+};
+```
+
+Updated document cards with View and Delete buttons:
+- View button (blue) - Navigate to detail page
+- Delete button (red) - Delete with confirmation
+- Buttons at bottom of card, separated from clickable card area
+
+### Testing Results
+
+**Metadata Extraction**:
+- ✅ Papers with full CrossRef data: No AI call, instant extraction
+- ✅ Papers with partial CrossRef: AI fills missing fields (e.g., abstract, keywords)
+- ✅ Papers with no DOI: Full AI extraction
+- ✅ Keywords extraction: Works well, AI provides relevant keywords
+
+**All Fields Populated**:
+- ✅ Title, authors, year, journal
+- ✅ Volume, issue, pages, publisher
+- ✅ DOI, URL
+- ✅ Abstract, keywords
+- ✅ Publication type
+
+### Files Modified This Session
+
+**Backend**:
+- `backend/src/metadata.rs` - Complete refactor to use CreateDocument, added all field extraction
+- `backend/src/handlers.rs` - Simplified upload logic to use CreateDocument directly
+
+**Frontend**:
+- `frontend/app/dashboard/documents/[id]/page.tsx` - Added missing fields display, keywords as badges
+- `frontend/app/dashboard/page.tsx` - Added delete functionality with confirmation
+
+### Technical Decisions Made
+
+- **Struct consolidation**: Use domain models (CreateDocument) for extraction results instead of separate extraction-specific structs
+- **Field completeness**: Extract ALL available fields from both CrossRef and AI
+- **CrossRef priority**: Use CrossRef data first (free, fast, accurate), AI only for gaps
+- **Keywords source**: Keywords come from AI only (CrossRef doesn't provide them)
+- **Delete UX**: Confirmation dialog prevents accidental deletion
+
+### Key Learnings
+
+- **DRY principle**: Don't duplicate structs if they serve the same purpose
+- **Incremental development caveat**: Remember to come back and complete MVP features
+- **CrossRef capabilities**: Provides volume, issue, pages, publisher, URL - more than expected
+- **AI prompt engineering**: Explicit field requirements in JSON format works well
+- **Rust type safety**: Refactor was straightforward because compiler caught all mismatches
+
+### Code Quality Improvements
+
+- Eliminated ~50 lines of duplicate code
+- Single source of truth for document metadata structure
+- Clearer function signatures (`CreateDocument` more descriptive than `ExtractedMetadata`)
+- Better maintainability (add field once, works everywhere)
+
+## Session 6 - Profile Dropdown Menu & Profile Page Pipeline (2025-10-25 continued)
+
+### Profile Dropdown Menu Implementation - COMPLETE ✅
+
+**Context**: Added professional user profile dropdown menu using shadcn/ui components.
+
+**Goal**: Replace simple logout button with a full-featured profile dropdown that supports profile images.
+
+#### Implementation
+
+**Frontend Changes**:
+
+1. **Added shadcn dropdown menu component** - Already installed via `npx shadcn@latest add dropdown-menu`
+
+2. **Updated User interface** in [frontend/lib/api.ts](frontend/lib/api.ts:7):
+```typescript
+export interface User {
+    id: string;
+    email: string;
+    username: string | null;
+    profile_image_url: string | null;  // NEW - for profile images
+}
+```
+
+3. **Created profile dropdown in dashboard** [frontend/app/dashboard/page.tsx](frontend/app/dashboard/page.tsx:191-252):
+
+**Features**:
+- **Avatar System**:
+  - Shows profile image if `profile_image_url` exists
+  - Falls back to colored circle with user's initial (first letter of username/email)
+  - Two sizes: 32px (trigger button), 40px (dropdown header)
+
+- **Dropdown Menu Items**:
+  - Header with avatar, username, and email
+  - Dashboard link
+  - Profile Settings link (placeholder)
+  - Logout (destructive variant - red)
+
+- **UX Details**:
+  - Right-aligned dropdown (`align="end"`)
+  - Smooth hover effects on trigger
+  - Focus ring for accessibility
+  - shadcn animations (fade-in, zoom)
+
+**Code Structure**:
+```typescript
+<DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <button>
+      {user.profile_image_url ? (
+        <Image src={user.profile_image_url} ... />
+      ) : (
+        <div className="avatar-circle">
+          {user.username.charAt(0).toUpperCase()}
+        </div>
+      )}
+      <span>{user.username || user.email.split("@")[0]}</span>
+    </button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent>
+    <DropdownMenuLabel>...</DropdownMenuLabel>
+    <DropdownMenuItem>Dashboard</DropdownMenuItem>
+    <DropdownMenuItem>Profile Settings</DropdownMenuItem>
+    <DropdownMenuSeparator />
+    <DropdownMenuItem variant="destructive">Logout</DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+```
+
+#### Files Modified:
+- `frontend/lib/api.ts` - Added `profile_image_url` to User interface
+- `frontend/app/dashboard/page.tsx` - Replaced logout button with dropdown menu
+
+#### Current State:
+- ✅ Dropdown menu working with all interactions
+- ✅ Avatar fallback shows user initials
+- ✅ Ready for profile image upload implementation
+- 🚧 Profile Settings page - TODO NEXT
+
+### Profile Page & Image Upload Pipeline - COMPLETE ✅
+
+**Goal**: Build complete profile management system with image uploads and username editing.
+
+#### Database Migration
+
+**Migration**: `20251026012836_add_profile_image_url_to_users.sql`
+```sql
+ALTER TABLE users ADD COLUMN profile_image_url TEXT;
+```
+
+Applied to database running in Docker:
+```bash
+docker exec scholarvault-db psql -U postgres -d scholarvault -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image_url TEXT;"
+```
+
+#### Backend Implementation
+
+**1. Updated Models** - [backend/src/models.rs](backend/src/models.rs)
+
+Added `profile_image_url` to User and UserResponse:
+```rust
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct User {
+    pub id: Uuid,
+    pub email: String,
+    #[serde(skip_serializing)]
+    pub password_hash: String,
+    pub username: Option<String>,
+    pub profile_image_url: Option<String>,  // NEW
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct UserResponse {
+    pub id: Uuid,
+    pub email: String,
+    pub username: Option<String>,
+    pub profile_image_url: Option<String>,  // NEW
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateProfile {
+    pub username: Option<String>,
+}
+```
+
+**2. Profile Image Upload Handler** - [backend/src/handlers.rs](backend/src/handlers.rs:536-676)
+
+Key features:
+- Accepts multipart/form-data with file field
+- Validates file type: jpg, jpeg, png, webp only
+- Validates file size: max 5MB
+- Generates unique filename: `{user_id}_{uuid}.{ext}`
+- Stores in `uploads/profile_images/` directory
+- Deletes old profile image before uploading new one
+- Updates database with new path
+- Returns updated UserResponse
+
+**3. Delete Profile Image Handler** - [backend/src/handlers.rs](backend/src/handlers.rs:678-732)
+
+- Fetches current user to find existing image
+- Deletes file from disk (ignores error if file doesn't exist)
+- Sets `profile_image_url` to NULL in database
+- Returns updated UserResponse
+
+**4. Update Profile Handler** - [backend/src/handlers.rs](backend/src/handlers.rs:734-769)
+
+- Updates username field
+- Returns updated UserResponse with all fields including profile_image_url
+
+**5. CRITICAL FIX: get_current_user** - [backend/src/handlers.rs](backend/src/handlers.rs:152-178)
+
+**Problem**: Original implementation only returned JWT claims, which are immutable and don't include username or profile_image_url.
+
+**Before (Broken)**:
+```rust
+pub async fn get_current_user(AuthUser(claims): AuthUser) -> Json<Value> {
+    Json(json!({
+        "message": "You are authenticated",
+        "user_id": claims.sub,
+        "email": claims.email,
+    }))
+}
+```
+
+**After (Fixed)**:
+```rust
+pub async fn get_current_user(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+) -> Result<Json<UserResponse>, (StatusCode, Json<Value>)> {
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    let user = sqlx::query_as!(
+        User,
+        r#"SELECT id, email, password_hash, username, profile_image_url, created_at, updated_at FROM users WHERE id = $1"#,
+        user_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "User not found"})),
+        )
+    })?;
+
+    Ok(Json(UserResponse {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        profile_image_url: user.profile_image_url,
+    }))
+}
+```
+
+**Why this fix was critical**:
+- JWT tokens are immutable - they don't update when user profile changes
+- JWT only contains user_id and email (no username or profile_image_url)
+- Without database query, profile changes weren't visible after page refresh
+- AuthContext calls `/api/user/me` on page load to get current user state
+- Now returns fresh data from database, not stale JWT claims
+
+**6. Updated All User-Related Handlers** - [backend/src/handlers.rs](backend/src/handlers.rs)
+
+Updated these handlers to include `profile_image_url` in queries and responses:
+- `register_user` - Returns token + user with profile_image_url (auto-login)
+- `login_user` - Returns token + user with profile_image_url
+- All SQL queries selecting from users table now include `profile_image_url`
+
+**7. Routes Added** - [backend/src/routes.rs](backend/src/routes.rs:13-21)
+
+```rust
+.route("/api/user/profile", put(handlers::update_profile))
+.route("/api/user/profile-image", post(handlers::upload_profile_image))
+.route("/api/user/profile-image", delete(handlers::delete_profile_image))
+```
+
+**8. Static File Serving** - [backend/src/main.rs](backend/src/main.rs:35)
+
+Already configured (from Session 4):
+```rust
+.nest_service("/uploads", ServeDir::new("uploads"))
+```
+
+Serves uploaded images at `http://10.0.0.57:3000/uploads/profile_images/...`
+
+#### Frontend Implementation
+
+**1. Updated API Client** - [frontend/lib/api.ts](frontend/lib/api.ts)
+
+Added three new methods to ApiClient class:
+
+```typescript
+async updateProfile(token: string, username: string | null): Promise<User> {
+    const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
+        method: 'PUT',
+        headers: this.getHeaders(token),
+        body: JSON.stringify({ username }),
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update profile');
+    }
+    return response.json();
+}
+
+async uploadProfileImage(token: string, file: File): Promise<User> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/api/user/profile-image`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            // Don't set Content-Type - browser sets it automatically with boundary
+        },
+        body: formData,
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to upload profile image');
+    }
+    return response.json();
+}
+
+async deleteProfileImage(token: string): Promise<User> {
+    const response = await fetch(`${API_BASE_URL}/api/user/profile-image`, {
+        method: 'DELETE',
+        headers: this.getHeaders(token),
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete profile image');
+    }
+    return response.json();
+}
+```
+
+**Key difference**: `uploadProfileImage` uses FormData instead of JSON for multipart file upload.
+
+**2. Updated AuthContext** - [frontend/contexts/AuthContext.tsx](frontend/contexts/AuthContext.tsx)
+
+Added `setUser` to allow profile page to update global user state:
+
+```typescript
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, username?: string) => Promise<void>;
+  logout: () => void;
+  setUser: (user: User) => void;  // NEW - allows updating user state
+  isLoading: boolean;
+}
+
+// In provider:
+<AuthContext.Provider
+  value={{ user, token, login, register, logout, setUser, isLoading }}
+>
+```
+
+**Why needed**: When user uploads image or changes username, we need to update the global user state so changes appear immediately in dropdown menu without page refresh.
+
+**3. Profile Page** - [frontend/app/dashboard/profile/page.tsx](frontend/app/dashboard/profile/page.tsx)
+
+Complete profile management UI with:
+
+**Features**:
+- Profile image display (120x120px) with fallback avatar
+- Image upload with validation (type: jpg/png/webp, size: <5MB)
+- Image delete with confirmation dialog
+- Username update form with inline save button
+- Email display (read-only)
+- Success/error message notifications (auto-hide after 3 seconds)
+- Loading states during operations
+- Sign out button in "Danger Zone" section
+
+**Layout sections**:
+1. **Header** - Logo, title, "Back to Dashboard" button
+2. **Profile Image** - Display, upload, delete
+3. **Account Information** - Email (read-only), username (editable)
+4. **Danger Zone** - Sign out button
+
+**Image handling**:
+```typescript
+const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file || !token) return;
+
+  // Frontend validation
+  if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) {
+    setError("Please upload a JPG, PNG, or WebP image");
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    setError(`Image is too large. Maximum size is 5MB`);
+    return;
+  }
+
+  setIsUploadingImage(true);
+  try {
+    const updatedUser = await api.uploadProfileImage(token, file);
+    setUser(updatedUser);  // Update global state
+    setProfileImage(updatedUser.profile_image_url);
+    setMessage("Profile image uploaded successfully!");
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Failed to upload image");
+  } finally {
+    setIsUploadingImage(false);
+  }
+};
+```
+
+**4. Updated Dashboard Dropdown** - [frontend/app/dashboard/page.tsx](frontend/app/dashboard/page.tsx)
+
+**Profile Settings Link**:
+Changed from `alert("Profile page coming soon!")` to `router.push("/dashboard/profile")`
+
+**Avatar Display** (two places - trigger button and dropdown label):
+```typescript
+{user.profile_image_url ? (
+  <Image
+    src={`http://10.0.0.57:3000/${user.profile_image_url}`}
+    alt={user.username || "User"}
+    width={32}
+    height={32}
+    className="rounded-full object-cover"
+  />
+) : (
+  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+    {(user.username || user.email).charAt(0).toUpperCase()}
+  </div>
+)}
+```
+
+**5. Next.js Image Configuration** - [frontend/next.config.ts](frontend/next.config.ts)
+
+**Initial Issue**: Next.js Image component blocked images from external domains.
+
+**Error**: `hostname "10.0.0.57" is not configured under images in your next.config.js`
+
+**Solution**:
+```typescript
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  output: 'standalone',
+  images: {
+    unoptimized: true,  // CRITICAL - disables Next.js image optimization
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: '10.0.0.57',
+        port: '3000',
+        pathname: '/uploads/**',
+      },
+    ],
+  },
+};
+
+export default nextConfig;
+```
+
+**Why `unoptimized: true` was needed**:
+- Next.js Image component optimizes images through its own server
+- In dev mode with Docker, this caused transparent/broken images
+- Setting `unoptimized: true` makes Image component behave like regular `<img>`
+- Images still benefit from Next.js lazy loading and proper sizing
+
+**6. Google Font Integration** - [frontend/app/layout.tsx](frontend/app/layout.tsx) & [frontend/app/globals.css](frontend/app/globals.css)
+
+Added Almendra Display font for decorative headings:
+
+**layout.tsx**:
+```typescript
+import { Almendra_Display } from "next/font/google";
+
+export const almendraDisplay = Almendra_Display({
+  variable: "--font-almendra-display",
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+// In body className:
+className={`${geistSans.variable} ${geistMono.variable} ${almendraDisplay.variable} antialiased`}
+```
+
+**globals.css** (Tailwind v4 @theme inline):
+```css
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-almendra: var(--font-almendra-display);  // NEW
+}
+```
+
+**Usage**: Can now use `className="font-almendra"` on headings/logos.
+
+#### Multipart Form Data Pipeline - Technical Deep Dive
+
+**What is Multipart?**
+
+Multipart/form-data is an HTTP content type for uploading files. Unlike JSON (text-based), multipart can send binary data (images, PDFs, etc.).
+
+**Format**:
+```
+POST /api/user/profile-image
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="avatar.jpg"
+Content-Type: image/jpeg
+
+[binary image bytes here]
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+```
+
+**Complete Pipeline**:
+
+```
+FRONTEND (Browser)
+    ↓
+1. User selects image file via <input type="file">
+   - Creates File object in memory
+
+    ↓
+2. Frontend validation (optional, UX layer)
+   - Check MIME type: image/jpeg, image/png, etc.
+   - Check file size: < 5MB
+   - Can be bypassed (not security, just UX)
+
+    ↓
+3. Create FormData object
+   const formData = new FormData();
+   formData.append('file', fileObject);
+
+    ↓
+4. Send HTTP POST
+   fetch('/api/user/profile-image', {
+     method: 'POST',
+     headers: { 'Authorization': 'Bearer token' },
+     body: formData  // Browser auto-sets Content-Type with boundary
+   })
+
+    ↓
+NETWORK (HTTP Request)
+    ↓
+Multipart request with:
+- Authorization header (JWT token)
+- Content-Type: multipart/form-data; boundary=...
+- Body: binary image data wrapped in boundary markers
+
+    ↓
+BACKEND (Rust + Axum)
+    ↓
+5. Axum receives request
+   - AuthUser middleware verifies JWT
+   - Multipart extractor parses multipart body
+
+    ↓
+6. Backend validation (REQUIRED - security layer)
+   - Check file extension: .jpg, .jpeg, .png, .webp
+   - Check file size: < 5MB
+   - CANNOT be bypassed (server-side validation)
+
+    ↓
+7. Read file bytes into memory
+   let data = field.bytes().await;
+
+    ↓
+8. Generate unique filename
+   let filename = format!("{}_{}_{}.{}", user_id, uuid, timestamp, ext);
+
+    ↓
+9. Delete old profile image (if exists)
+   tokio::fs::remove_file(old_image_path).await;
+
+    ↓
+10. Write new file to disk
+    tokio::fs::write("uploads/profile_images/abc123.jpg", data).await;
+
+    ↓
+DATABASE (PostgreSQL)
+    ↓
+11. Update users table with FILE PATH (not image data!)
+    UPDATE users
+    SET profile_image_url = 'uploads/profile_images/abc123.jpg'
+    WHERE id = user_id;
+
+    Note: Database stores TEXT path, actual file is on filesystem
+
+    ↓
+BACKEND RESPONSE
+    ↓
+12. Return updated user object
+    {
+      "id": "...",
+      "email": "...",
+      "username": "...",
+      "profile_image_url": "uploads/profile_images/abc123.jpg"
+    }
+
+    ↓
+FRONTEND (React State Update)
+    ↓
+13. Frontend receives response
+    - Calls setUser(updatedUser) to update AuthContext
+    - Updates local state: setProfileImage(updatedUser.profile_image_url)
+    - UI re-renders with new image
+
+    ↓
+BROWSER IMAGE REQUEST
+    ↓
+14. Browser requests image
+    GET http://10.0.0.57:3000/uploads/profile_images/abc123.jpg
+
+    ↓
+15. Backend serves static file
+    - Axum's ServeDir middleware intercepts /uploads/* requests
+    - Reads file from disk
+    - Returns binary image data with Content-Type: image/jpeg
+
+    ↓
+16. Browser renders image in <img> or <Image> component
+```
+
+**Key Concepts**:
+- **Three-layer validation**: UX (frontend), Performance (frontend), Security (backend)
+- **Database stores path, not binary**: Efficient - database only has text, files on disk
+- **Two separate HTTP requests**: One to upload, one to display
+- **Static file serving**: Backend serves /uploads/* as static files via ServeDir
+
+#### Issues Encountered and Solutions
+
+**Issue 1: Typo in file validation**
+- **Problem**: `"iamge/jpeg"` instead of `"image/jpeg"` in profile page validation
+- **Symptom**: All JPEG uploads rejected with "Please upload a JPG, PNG, or WebP image"
+- **Fix**: Corrected typo to `"image/jpeg"`
+
+**Issue 2: Next.js Image component not displaying images**
+- **Problem**: Images uploaded successfully but appeared transparent/blank
+- **Symptom**: Regular `<img>` worked, but `<Image>` component didn't
+- **Root cause**: Next.js Image component's optimization server couldn't access images
+- **Fix**: Added `unoptimized: true` to next.config.ts to disable optimization
+- **Alternative tested**: Using `<img>` instead of `<Image>` - also worked
+
+**Issue 3: User data not persisting after page refresh**
+- **Problem**: Upload image/change username → works → refresh page → reverts to old data
+- **Root cause**: `get_current_user` endpoint returned JWT claims (immutable) instead of database data
+- **Symptom**: AuthContext loaded stale data on page refresh
+- **Fix**: Updated `get_current_user` to query database with user_id from JWT
+- **Why this matters**:
+  - JWT tokens are immutable (set at login, don't update)
+  - JWT only contains user_id and email (not username or profile_image_url)
+  - Database has current state, JWT has identity proof
+  - Endpoint must query database to get fresh user data
+
+**Issue 4: Missing closing brace in register_user**
+- **Problem**: Cargo compilation error - "unclosed delimiter"
+- **Symptom**: `cargo sqlx prepare` failed
+- **Root cause**: Missing `}` after match statement in register_user function
+- **Fix**: Added closing brace to properly close the function
+
+**Issue 5: SQLx offline mode after schema changes**
+- **Problem**: Docker build failed after adding profile_image_url column
+- **Root cause**: SQLx's compile-time verification uses cached schema in .sqlx/ directory
+- **Solution**: Run `cargo sqlx prepare` to regenerate offline query data
+- **Process**:
+  1. Apply migration to database
+  2. Run `cargo sqlx prepare` to update .sqlx/ cache
+  3. Rebuild Docker container with updated cache
+
+#### Files Modified This Session
+
+**Backend**:
+- `backend/migrations/20251026012836_add_profile_image_url_to_users.sql` - NEW: Database migration
+- `backend/src/models.rs` - Added profile_image_url to User/UserResponse, added UpdateProfile struct
+- `backend/src/handlers.rs` - Added 3 new profile handlers, fixed get_current_user, updated all user queries
+- `backend/src/routes.rs` - Added 3 new profile routes
+- `backend/src/main.rs` - Removed unused import (RequestBodyLimitLayer)
+
+**Frontend**:
+- `frontend/lib/api.ts` - Added 3 new profile API methods
+- `frontend/contexts/AuthContext.tsx` - Added setUser to interface and provider
+- `frontend/app/dashboard/profile/page.tsx` - NEW: Complete profile management page
+- `frontend/app/dashboard/page.tsx` - Updated dropdown with profile images, linked to profile page
+- `frontend/next.config.ts` - Added image configuration with unoptimized flag
+- `frontend/app/layout.tsx` - Added Almendra Display font import
+- `frontend/app/globals.css` - Added --font-almendra variable
+
+**Docker**:
+- `.sqlx/` directory - Regenerated query cache after schema changes
+
+#### Testing Results
+
+All functionality tested and working:
+
+✅ **Profile Image Upload**:
+- File type validation (frontend + backend)
+- File size validation (5MB max)
+- Unique filename generation
+- Old image deletion before new upload
+- Database update with new path
+- Immediate UI update via setUser
+- Image displays in profile page and dropdown
+
+✅ **Profile Image Delete**:
+- Confirmation dialog
+- File deletion from disk
+- Database update (set to NULL)
+- Immediate UI update (fallback avatar)
+- Dropdown shows fallback avatar
+
+✅ **Username Update**:
+- Inline form with save button
+- Database update
+- Immediate UI update in dropdown
+- Persists after page refresh (thanks to get_current_user fix)
+
+✅ **Page Refresh Persistence**:
+- Profile image URL persists
+- Username persists
+- get_current_user fetches fresh data from database
+
+✅ **Dropdown Menu Integration**:
+- Profile image displays (32px in trigger, 40px in menu)
+- Username displays
+- "Profile Settings" link navigates to /dashboard/profile
+- Changes reflect immediately without refresh
+
+✅ **Static File Serving**:
+- Backend serves images at /uploads/profile_images/*
+- CORS configured (allow origin: *)
+- Images accessible from frontend
+
+#### Technical Decisions Made
+
+1. **Database stores path, not binary** - Efficient, standard practice for file uploads
+2. **Unique filename format** - `{user_id}_{uuid}.{ext}` prevents collisions, ties to user
+3. **Delete old before upload new** - Prevents orphaned files accumulating on disk
+4. **Frontend + backend validation** - UX layer (frontend) + security layer (backend)
+5. **setUser in AuthContext** - Allows immediate UI updates without page refresh
+6. **get_current_user queries database** - Returns fresh data, not stale JWT claims
+7. **Image component unoptimized** - Simpler, works reliably in Docker dev environment
+8. **Profile image size limits** - 5MB max (reasonable for profile pictures)
+9. **Supported image formats** - JPG, PNG, WebP (modern web standards)
+
+#### Key Learnings
+
+**JWT vs Database - Two Sources of Truth**:
+- JWT = Identity proof (immutable, contains user_id + email)
+- Database = Current state (mutable, contains all profile data)
+- Endpoints must query database to get current user state
+- JWT verifies WHO the user is, database shows WHAT their current profile is
+
+**Multipart Form Data**:
+- Required for binary file uploads (images, PDFs)
+- Browser auto-sets Content-Type with boundary
+- Don't manually set Content-Type header with FormData
+- Backend uses Multipart extractor to parse
+
+**Next.js Image Component**:
+- Requires configuration for external images (remotePatterns)
+- May need `unoptimized: true` in Docker dev environments
+- Regular `<img>` is a valid alternative for user-uploaded content
+
+**React State Management**:
+- Global state (AuthContext) for user data used across app
+- Local state (useState) for form inputs and UI states
+- setUser allows child components to update parent context
+
+**File Upload Best Practices**:
+- Always validate on backend (frontend validation can be bypassed)
+- Generate unique filenames (prevent overwrites/collisions)
+- Delete old files before uploading new ones (prevent disk bloat)
+- Store paths in database, files on filesystem
+- Use static file serving for uploaded content
+
+**SQLx Offline Mode**:
+- Compile-time query verification against cached schema
+- Must regenerate cache after schema changes (sqlx prepare)
+- Cache stored in .sqlx/ directory (committed to git)
+- Enables Docker builds without database connection
+
+#### Current State
+
+**What Works**:
+- ✅ Complete profile management system
+- ✅ Profile image upload/delete with validation
+- ✅ Username update
+- ✅ Profile page UI with all sections
+- ✅ Dropdown menu shows profile image and username
+- ✅ Changes persist after page refresh
+- ✅ All backend endpoints working
+- ✅ Static file serving configured
+- ✅ Next.js Image component working with unoptimized flag
+- ✅ Three-layer validation (UX, performance, security)
+
+**Authentication Flow**:
+1. User logs in → JWT token created with user_id + email
+2. Frontend stores token in localStorage
+3. On page load, frontend calls /api/user/me with token
+4. Backend verifies token, queries database for current user state
+5. Returns full user object (including profile_image_url, username)
+6. Frontend updates AuthContext with fresh data
+7. All components re-render with current user state
+
+**Profile Update Flow**:
+1. User uploads image/changes username
+2. Backend updates database
+3. Backend returns updated UserResponse
+4. Frontend calls setUser(updatedUser)
+5. AuthContext updates global state
+6. All components using useAuth() see new data immediately
+7. On refresh, /api/user/me returns fresh data from database
+
+## Session 7 - Collections/Folders System Implementation (2025-10-26)
+
+### Collections/Folders Feature - COMPLETE ✅
+
+**Context**: Implemented complete document organization system with nested folders, allowing users to organize research papers into collections.
+
+**Goal**: Build a bibliography management system where each folder represents a different research project/paper with curated PDFs.
+
+#### Database Schema
+
+**Migration**: `20251026160657_create_collections_tables.sql`
+
+Created two new tables:
+
+1. **collections table** - Nested folder structure
+```sql
+CREATE TABLE collections (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    parent_id UUID REFERENCES collections(id) ON DELETE CASCADE,  -- Self-referential for nesting
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+2. **document_collections table** - Many-to-many junction table
+```sql
+CREATE TABLE document_collections (
+    document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    collection_id UUID NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
+    added_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (document_id, collection_id)
+);
+```
+
+**Key Design Decisions**:
+- `parent_id` allows folders within folders (NULL = root level)
+- Many-to-many relationship: documents can be in multiple collections
+- CASCADE deletes handle cleanup automatically
+- Indexes on user_id, parent_id, and junction table foreign keys for performance
+
+#### Backend Implementation
+
+**New Models** - [backend/src/models.rs](backend/src/models.rs:117-134):
+```rust
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct Collection {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub name: String,
+    pub parent_id: Option<Uuid>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateCollection {
+    pub name: String,
+    pub parent_id: Option<Uuid>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateCollection {
+    pub name: Option<String>,
+    pub parent_id: Option<Uuid>,
+}
+```
+
+**New Handlers** - [backend/src/handlers.rs](backend/src/handlers.rs):
+
+Seven new handlers implemented:
+1. `get_user_collections` - List all user's collections
+2. `create_collection` - Create new collection with optional parent
+3. `update_collection` - Rename or move collection (change parent)
+4. `delete_collection` - Delete collection and all subfolders (cascade)
+5. `add_document_to_collection` - Add document to collection (many-to-many)
+6. `remove_document_from_collection` - Remove document from collection (soft delete)
+7. `get_collection_documents` - Fetch all documents in a specific collection
+
+**Validation Features**:
+- Parent collection ownership verification
+- Prevents setting collection as its own parent
+- Document ownership verification before adding to collection
+- Proper error messages for all failure cases
+
+**New Routes** - [backend/src/routes.rs](backend/src/routes.rs:22-28):
+```rust
+.route("/api/collections", get(handlers::get_user_collections))
+.route("/api/collections", post(handlers::create_collection))
+.route("/api/collections/{id}", put(handlers::update_collection))
+.route("/api/collections/{id}", delete(handlers::delete_collection))
+.route("/api/collections/{collection_id}/documents", get(handlers::get_collection_documents))
+.route("/api/collections/{collection_id}/documents/{document_id}", post(handlers::add_document_to_collection))
+.route("/api/collections/{collection_id}/documents/{document_id}", delete(handlers::remove_document_from_collection))
+```
+
+#### Frontend Implementation
+
+**1. API Client Updates** - [frontend/lib/api.ts](frontend/lib/api.ts):
+
+Added Collection interface and 7 new API methods:
+```typescript
+export interface Collection {
+    id: string;
+    user_id: string;
+    name: string;
+    parent_id: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+// Methods: getCollections, createCollection, updateCollection, deleteCollection,
+// getCollectionDocuments, addDocumentToCollection, removeDocumentFromCollection
+```
+
+**2. FolderTree Sidebar Component** - [frontend/components/FolderTree.tsx](frontend/components/FolderTree.tsx) - NEW
+
+**Features**:
+- Tree structure with expand/collapse functionality
+- Nested folder rendering with visual indentation (20px per level)
+- "All Documents" special view (null collection)
+- Folder icons: 📂 (expanded), 📁 (collapsed)
+- Per-folder actions: ✏️ (rename), 🗑️ (delete)
+- "+ New Folder" button at top
+- Selected folder highlighted with blue border and background
+
+**Tree Building Algorithm**:
+```typescript
+const buildTree = (parentId: string | null): Collection[] => {
+  return collections
+    .filter((c) => c.parent_id === parentId)
+    .sort((a, b) => a.name.localeCompare(b.name));
+};
+```
+
+Recursively renders nested folders with:
+- Dynamic indentation based on depth level
+- Expand/collapse state management with Set
+- Click handlers that stop propagation for buttons
+
+**3. AddToCollectionDropdown Component** - [frontend/components/AddToCollectionModal.tsx](frontend/components/AddToCollectionModal.tsx)
+
+**Evolution**: Started as modal, refactored to dropdown for better UX
+
+Uses shadcn/ui DropdownMenu components:
+- Integrates with document card dropdown triggers
+- Shows list of all collections with folder icons
+- Automatically closes on selection (DropdownMenuItem behavior)
+- Empty state message if no collections exist
+
+**4. Dashboard Integration** - [frontend/app/dashboard/page.tsx](frontend/app/dashboard/page.tsx)
+
+**Layout Changes**:
+```tsx
+<div className="min-h-screen flex">
+  <FolderTree {...props} />          {/* Sidebar - 256px width */}
+  <div className="flex-1 flex flex-col">
+    <header>...</header>              {/* Header with logo & user menu */}
+    <main>...</main>                  {/* Document grid */}
+  </div>
+</div>
+```
+
+**New State Management**:
+```typescript
+const [collections, setCollections] = useState<Collection[]>([]);
+const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
+const [collectionDocuments, setCollectionDocuments] = useState<Document[]>([]);
+const [isLoadingCollectionDocs, setIsLoadingCollectionDocs] = useState(false);
+```
+
+**Smart Document Filtering**:
+```typescript
+const displayedDocuments = selectedCollectionId === null
+  ? documents                    // Show all when "All Documents" selected
+  : collectionDocuments;         // Show filtered when collection selected
+
+// Separate useEffect fetches collection documents when selectedCollectionId changes
+```
+
+**Context-Aware Buttons**:
+
+When viewing **"All Documents"**:
+- View button (blue) - Opens document detail
+- + Collection button (green dropdown) - Add to collection
+- Delete button (red) - Permanently delete document
+
+When viewing **specific collection**:
+- View button (blue) - Opens document detail
+- Remove button (orange) - Remove from collection only (soft delete)
+- Delete button (red) - Permanently delete document everywhere
+
+**Upload to Collection Feature**:
+When viewing a collection, uploading a PDF automatically adds it to that collection:
+```typescript
+// In handleFileUpload after successful upload:
+if (selectedCollectionId && token) {
+  await api.addDocumentToCollection(token, selectedCollectionId, newDocument.id);
+  const docs = await api.getCollectionDocuments(token, selectedCollectionId);
+  setCollectionDocuments(docs);
+}
+```
+
+**5. Collection Management Handlers**:
+
+```typescript
+const handleCreateFolder = async (parentId: string | null) => {
+  const folderName = prompt("Enter folder name:");
+  // Creates collection with optional parent
+};
+
+const handleRenameFolder = async (collectionId: string) => {
+  const newName = prompt("Enter new folder name:", collection.name);
+  // Updates collection name
+};
+
+const handleDeleteFolder = async (collectionId: string) => {
+  if (confirm(`Delete folder "${name}"? This will also delete all subfolders.`)) {
+    // Deletes collection and cascades to subfolders
+  }
+};
+
+const handleRemoveFromCollection = async (e, documentId) => {
+  // Removes document from current collection (soft delete)
+  // Document still exists in "All Documents"
+};
+```
+
+#### User Experience Features
+
+**1. Two-Level Delete System**:
+- **Soft Delete**: Remove from collection → document stays in library
+- **Hard Delete**: Delete document → removes from all collections and library
+
+**2. Auto-Add on Upload**:
+- Upload PDF while viewing "Biology" collection → automatically added to Biology
+- Upload in "All Documents" → just uploaded, not added to any collection
+
+**3. Visual Hierarchy**:
+- 64px width sidebar with white background
+- Indented nested folders (20px per level)
+- Blue highlight on selected collection
+- Folder icons change when expanded/collapsed
+
+**4. Dropdown Menu UX**:
+- Replaced full-screen modal with dropdown (like profile menu)
+- Opens next to "+ Collection" button
+- Lists all collections with folder icons
+- Auto-closes on selection
+
+#### Technical Implementation Details
+
+**SQLx Offline Mode**:
+After adding new database tables and queries:
+```bash
+cd backend
+cargo sqlx prepare  # Regenerates .sqlx/ cache
+docker compose up -d --build backend  # Rebuilds with new cache
+```
+
+**Why needed**: SQLx performs compile-time query verification. In Docker (offline mode), it uses cached query metadata from `.sqlx/` directory instead of connecting to database.
+
+**Frontend Component Architecture**:
+- FolderTree: Pure presentational component, receives all handlers as props
+- Dashboard: Smart component, manages state and orchestrates data flow
+- AddToCollectionDropdown: Reusable dropdown content component
+
+**State Management Pattern**:
+```
+User clicks collection in sidebar
+    ↓
+setSelectedCollectionId(id)
+    ↓
+useEffect triggers on selectedCollectionId change
+    ↓
+Fetches documents for that collection
+    ↓
+Updates collectionDocuments state
+    ↓
+displayedDocuments computed value updates
+    ↓
+Document grid re-renders with filtered documents
+```
+
+#### Files Modified/Created This Session
+
+**Backend**:
+- `backend/migrations/20251026160657_create_collections_tables.sql` - NEW: Database schema
+- `backend/src/models.rs` - Added Collection models (3 structs)
+- `backend/src/handlers.rs` - Added 7 collection handlers, updated imports
+- `backend/src/routes.rs` - Added 7 collection routes
+- `backend/.sqlx/` - Regenerated query cache
+
+**Frontend**:
+- `frontend/lib/api.ts` - Added Collection interface and 7 API methods
+- `frontend/components/FolderTree.tsx` - NEW: Sidebar tree component
+- `frontend/components/AddToCollectionModal.tsx` - NEW: Dropdown component
+- `frontend/app/dashboard/page.tsx` - Major refactor: sidebar integration, context-aware buttons, filtering logic
+
+#### Testing Results
+
+All functionality tested and working:
+
+✅ **Collection CRUD**:
+- Create root-level collections
+- Create nested collections (folders within folders)
+- Rename collections
+- Delete collections (cascades to subfolders)
+
+✅ **Document-Collection Relationships**:
+- Add documents to collections via dropdown
+- Remove documents from collections (soft delete)
+- Delete documents permanently (hard delete)
+- View collection documents (filtered view)
+
+✅ **UI/UX**:
+- Folder tree expands/collapses correctly
+- Selected collection highlighted
+- Context-aware buttons (different in "All Documents" vs collection view)
+- Upload auto-adds to current collection
+- Dropdown closes after selection
+
+✅ **Edge Cases**:
+- Empty collections display correctly
+- Deleting parent deletes all children (cascade)
+- Documents can be in multiple collections
+- "All Documents" view shows everything
+- Loading states during fetch operations
+
+#### Technical Decisions Made
+
+1. **Many-to-many relationship** - Documents can be in multiple collections (more flexible)
+2. **Self-referential parent_id** - Simple nested folder implementation
+3. **Cascade deletes** - Automatic cleanup of orphaned records
+4. **Soft delete vs hard delete** - Two-button system: Remove (collection only) vs Delete (permanent)
+5. **Dropdown over modal** - Better UX, consistent with profile menu pattern
+6. **Auto-add on upload** - When viewing collection, uploads automatically add to it
+7. **Sidebar layout** - Fixed width (256px) sidebar, flex-1 main content
+8. **Recursive tree rendering** - buildTree() function with depth-based indentation
+
+#### Key Learnings
+
+**Database Design**:
+- Self-referential foreign keys enable nested structures
+- Junction tables properly model many-to-many relationships
+- CASCADE DELETE simplifies cleanup logic
+
+**React State Management**:
+- Separate state for all documents vs collection documents
+- Computed values (displayedDocuments) reduce duplication
+- useEffect for side effects (data fetching on selection change)
+
+**Component Design Patterns**:
+- Presentational vs container components
+- Props drilling for event handlers (alternative to Context)
+- Recursive rendering for tree structures
+
+**Backend Architecture**:
+- Ownership verification critical for multi-tenant systems
+- Validate parent-child relationships before updates
+- Return updated resources after mutations (RESTful pattern)
+
+#### Issues Encountered and Solutions
+
+**Issue 1: Upload button stuck showing "Uploading..."**
+- **Problem**: Button label checking `uploadStatus !== "idle"` but had multiple states
+- **Fix**: Changed to check specific states: `uploadStatus === "uploading" && "⏳ Uploading..."`
+
+**Issue 2: Documents not filtering when collection selected**
+- **Problem**: displayedDocuments always showing all documents
+- **Fix**: Added useEffect to fetch collection documents, update state based on selection
+
+**Issue 3: Wrong loading indicator**
+- **Problem**: Used `isLoading` (global) instead of `isLoadingCollectionDocs` (collection-specific)
+- **Fix**: Conditional loading state: `selectedCollectionId ? isLoadingCollectionDocs : isLoading`
+
+**Issue 4: Dropdown not closing after selection**
+- **Problem**: Using custom button elements instead of DropdownMenuItem
+- **Fix**: Wrapped in DropdownMenuItem which has built-in close behavior
+
+#### Current State
+
+**What Works**:
+- ✅ Complete collections/folders system with nested support
+- ✅ Sidebar tree view with expand/collapse
+- ✅ Add documents to collections via dropdown
+- ✅ Remove from collection (soft delete) vs delete permanently (hard delete)
+- ✅ Upload directly to collection (auto-add)
+- ✅ Context-aware UI (different buttons based on view)
+- ✅ Many-to-many document-collection relationships
+- ✅ Cascade deletion of nested folders
+
+**Database Tables** (7 total):
+- users (id, email, password_hash, username, profile_image_url, timestamps)
+- documents (id, user_id, 13 metadata fields, pdf_url, timestamps)
+- collections (id, user_id, name, parent_id, timestamps)
+- document_collections (document_id, collection_id, added_at)
+- _sqlx_migrations (SQLx internal tracking)
+
+**API Endpoints** (27 total):
+- Auth: register, login, get current user (3)
+- Profile: update profile, upload/delete image (3)
+- Documents: CRUD + upload (6)
+- Collections: CRUD (4)
+- Document-Collection relationships: add, remove, get (3)
+- Static: /uploads (file serving)
+- Health: /health (1)
+
+## Remaining Features (Prioritized)
+
+### Phase 1: Document Organization (CURRENT) - IN PROGRESS
+
+- ✅ **Collections/Folders** - COMPLETE
+  - ✅ Create/rename/delete collections
+  - ✅ Move documents between collections
+  - ✅ Nested folder support (parent_id)
+  - ✅ Sidebar tree view with expand/collapse
+  - ✅ Context-aware document actions (remove vs delete)
+
+- 🚧 **Collections Improvements** - TODO NEXT
+  - Add nested folder creation from UI (currently only root-level via "+ New Folder")
+  - Drag-and-drop for moving documents between collections
+  - Drag-and-drop for reorganizing folder structure
+  - Collection badges/tags on document cards
+  - Show document count in sidebar folders
+  - Bulk operations (add multiple documents to collection)
+
+### Phase 2: Search & Filtering
+
+- **Search Functionality** - Search documents by multiple criteria
+  - Full-text search by title, author, keywords
+  - Filter by year, journal, publication type
+
+## TODO: Issues to Fix & Improvements (Next Week)
+
+### Critical Bugs / Issues Found
+None currently - all features working as expected!
+
+### UI/UX Improvements Needed
+
+1. **Better Folder Creation UX**
+   - Current: Uses `prompt()` for folder names (not great UX)
+   - Improvement: Replace with proper modal/form component
+   - Applies to: create folder, rename folder operations
+
+2. **Add Subfolder Creation Button**
+   - Current: Can only create root-level folders via "+ New Folder" button
+   - Missing: Right-click menu or button on folders to create subfolders
+   - Needed: UI element next to folder name (e.g., "+" icon) to add child folder
+
+3. **Component Refactoring & Styling**
+   - Dashboard page is getting large (~600 lines) - consider splitting
+   - Potential components to extract:
+     - DocumentCard component (currently inline in map)
+     - DocumentGrid component (grid layout + cards)
+     - UploadSection component (upload button + status + error)
+   - Add consistent theming/styling system
+   - Consider background image implementation (user mentioned they have one)
+
+4. **Empty States & Loading States**
+   - Add skeleton loaders while documents/collections are fetching
+   - Better empty state for "no documents in collection"
+   - Loading spinner for collection document fetch
+
+5. **Collection Features**
+   - Show document count badge on each folder in sidebar
+   - Add collection badges/chips on document cards to show which collections they're in
+   - Bulk selection UI (checkboxes on document cards)
+   - Bulk add to collection operation
+
+6. **Drag-and-Drop** - Major UX improvement
+   - Drag documents between collections in sidebar
+   - Drag documents from "All Documents" to collection folders
+   - Drag folders to reorganize/nest them
+   - Library: Consider `@dnd-kit` or `react-beautiful-dnd`
+
+7. **Document Card Enhancements**
+   - Add hover preview of PDF (tooltip with first page thumbnail)
+   - Show which collections document is in (badges below title)
+   - Quick actions menu (share, export citation, etc.)
+   - Publication type icon/badge
+
+8. **Mobile Responsiveness**
+   - Sidebar should collapse on mobile (hamburger menu)
+   - Document grid should stack on small screens
+   - Touch-friendly folder tree
+
+### Backend Improvements
+
+1. **Add Cycle Detection for Parent-Child**
+   - Current: Basic check (can't be own parent)
+   - Missing: Recursive cycle detection (A → B → C → A)
+   - Where: `update_collection` handler in `backend/src/handlers.rs`
+   - Risk: User could create invalid tree structure
+
+2. **Add Tracing/Logging** (from Session 1 notes)
+   - Add `tracing-subscriber` for structured logging
+   - Replace `println!` and `eprintln!` with `tracing::info!` and `tracing::error!`
+   - Add request ID tracking
+   - Log slow queries and performance metrics
+
+3. **Custom Error Types** (from Session 1 notes)
+   - Create `ApiError` enum with `IntoResponse`
+   - Use `thiserror` crate for cleaner error definitions
+   - Remove repetitive `.map_err()` boilerplate
+   - Better error messages for debugging
+
+4. **Pagination**
+   - Add pagination for documents list (currently fetches all)
+   - Add pagination for collections list
+   - Implement cursor-based or offset pagination
+   - Frontend: Infinite scroll or page numbers
+
+5. **Database Optimizations**
+   - Add compound indexes (e.g., `user_id + created_at` for sorting)
+   - Consider JSONB for `authors` and `keywords` arrays (faster queries)
+   - Add full-text search indexes for title, abstract
+   - Connection pooling tuning for production
+
+### Feature Additions (Not Urgent)
+
+1. **Search & Filtering**
+   - Global search bar in header
+   - Search by title, author, keywords, DOI
+   - Filter by year range, publication type, journal
+   - Sort by date, title, author, citation count
+
+2. **Citation Export**
+   - BibTeX format (for LaTeX)
+   - APA format (7th edition)
+   - MLA format (9th edition)
+   - Export single document or entire collection
+
+3. **Password Change**
+   - Add to profile page (currently missing)
+   - Email verification for password reset
+   - Password strength requirements
+
+4. **Collaborative Features**
+   - Share collections with other users (read/write permissions)
+   - Comments on documents
+   - Activity feed (who added what to shared collections)
+
+5. **Advanced Metadata**
+   - Semantic Scholar API integration (citation counts, references)
+   - Automatic keyword generation from abstract (AI)
+   - Related papers suggestions
+   - Citation graph visualization
+
+### Code Quality & Testing
+
+1. **Frontend Testing**
+   - Add Jest + React Testing Library
+   - Unit tests for components
+   - Integration tests for API client
+   - E2E tests with Playwright
+
+2. **Backend Testing**
+   - Add `cargo test` integration tests
+   - Test database operations
+   - Test authentication flows
+   - Mock external APIs (OpenAI, CrossRef)
+
+3. **Type Safety**
+   - Ensure all API responses match TypeScript interfaces
+   - Add Zod or similar runtime validation
+   - Consider generating TypeScript types from Rust (e.g., `ts-rs`)
+
+4. **Code Organization**
+   - Split large files (dashboard.tsx, handlers.rs)
+   - Create reusable UI components library
+   - Standardize error handling patterns
+   - Add JSDoc/TSDoc comments
+
+### DevOps & Production Readiness
+
+1. **Environment Configuration**
+   - Separate dev/staging/prod configs
+   - Use environment-specific `docker-compose.yml` files
+   - Secrets management (not in `.env` files)
+
+2. **S3/MinIO Integration** (from roadmap)
+   - Replace local `uploads/` with S3-compatible storage
+   - Presigned URLs for secure file access
+   - CDN for faster image/PDF delivery
+
+3. **Monitoring & Observability**
+   - Health check endpoints (beyond basic /health)
+   - Metrics (Prometheus/Grafana)
+   - Error tracking (Sentry)
+   - Uptime monitoring
+
+4. **Security Hardening**
+   - HTTPS in production (Let's Encrypt)
+   - CORS configuration (specific origins, not `allow_any()`)
+   - Rate limiting (prevent abuse)
+   - Input sanitization (SQL injection prevention - already using parameterized queries)
+   - CSRF protection
+   - Content Security Policy headers
+
+5. **Performance**
+   - CDN for static assets
+   - Image optimization (WebP conversion, responsive sizes)
+   - Database query optimization (EXPLAIN ANALYZE)
+   - Caching layer (Redis for session data, query results)
+   - Lazy loading for PDF viewer
+
+### Documentation
+
+1. **API Documentation**
+   - OpenAPI/Swagger spec
+   - Auto-generated docs from code
+   - Example requests/responses
+   - Authentication flow diagram
+
+2. **User Documentation**
+   - Getting started guide
+   - Feature tutorials (how to organize papers, export citations)
+   - FAQ
+   - Troubleshooting guide
+
+3. **Developer Documentation**
+   - Architecture decision records (ADRs)
+   - Database schema diagram
+   - Deployment guide
+   - Contributing guidelines
+
+## Planning for Next Session
+
+### Immediate Priorities (UI Polish)
+
+Based on user's request to "work on the UI and refactor components":
+
+1. **Replace prompt() dialogs with proper modals**
+   - Create reusable Modal component (or use shadcn dialog)
+   - Update create/rename folder to use modal
+   - Better validation and error handling
+
+2. **Component Refactoring**
+   - Extract DocumentCard component
+   - Extract UploadSection component
+   - Organize components into logical directories
+
+3. **Styling Improvements**
+   - Implement background image (user mentioned having one)
+   - Consistent spacing and typography
+   - Better hover states and transitions
+   - Loading skeletons instead of "Loading..." text
+
+4. **Add subfolder creation UI**
+   - Button or menu on each folder to add child
+   - Pass parent_id to handleCreateFolder
+
+### Medium-Term Goals
+
+1. Document count badges on folders
+2. Collection badges on document cards
+3. Drag-and-drop for documents
+4. Search functionality
+5. Citation export
+
+### Long-Term Goals
+
+1. Semantic Scholar integration
+2. Browser extension
+3. Collaborative features
+4. Stripe subscriptions
+  - Sort by date, title, author
+
+### Phase 3: Citation & Export
+- **Citation Export** - Export citations in multiple formats
+  - BibTeX format (standard for LaTeX)
+  - APA format (7th edition)
+  - MLA format (9th edition)
+  - Single document export
+  - Bulk export (selected documents or entire library)
+
+### Phase 4: Backend Infrastructure Improvements
+- **S3/MinIO Integration** - Production file storage
+  - Replace local `uploads/` with S3-compatible storage
+  - Support for multiple storage backends
+  - Presigned URLs for secure access
+
+- **Logging/Tracing** - Add tracing-subscriber
+  - Structured logging throughout application
+  - Request/response tracing
+  - Performance monitoring
+
+- **Error Handling** - Custom error types
+  - Implement `ApiError` enum with `IntoResponse`
+  - Better error messages for debugging
+  - Remove repetitive `.map_err()` boilerplate
+
+### Phase 5: Advanced Features
+- **Semantic Scholar Integration** - Search academic papers
+  - Search papers within app
+  - Import papers directly from search results
+  - Show citation counts and references
+
+- **Browser Extension** - One-click saves
+  - Chrome extension for saving papers
+  - Works on publisher sites (JSTOR, PubMed, arXiv)
+  - Automatic metadata extraction from page
+
+- **Stripe Subscriptions** - Payment management
+  - Free tier (limited documents)
+  - Pro tier (unlimited documents + features)
+  - Subscription management dashboard
+  - Webhook handling for payment events
+
+### Phase 6: Collaboration & Sharing
+- **Shared Collections** - Collaborate with other researchers
+  - Share collections with read/write permissions
+  - Team workspaces
+  - Comments on documents
+
+- **Public Profiles** - Share your research
+  - Public bibliography pages
+  - Export collection as webpage
+  - DOI links to papers
+
+## Session 8 - UI Refactoring & Layout Architecture (2025-10-28)
+
+### UI Refactoring & Component Extraction - COMPLETE ✅
+
+**Context**: Continued from Session 7 where collections system was implemented. User added shadcn sidebar in 2 commits during the week. This session focused on refactoring UI architecture before codebase becomes too complex.
+
+**Goals**:
+- Create unified header design (replace macOS-style menubar approach)
+- Extract reusable components (DocumentCard, DocumentGrid, dialogs)
+- Centralize styling in globals.css
+- Replace `prompt()` calls with proper dialog components
+- Fix layout and z-index issues
+
+#### Design System - globals.css Refactoring
+
+**File**: [frontend/app/globals.css](frontend/app/globals.css)
+
+**Changes**:
+- Created comprehensive design token system in `:root`
+- Used OKLCH color space for modern perceptual uniformity
+- Defined CSS variables for colors, typography, layout, transitions
+- Integrated with Tailwind v4 using `@theme inline`
+- Created custom utilities using `@utility` (not `@layer components` - Tailwind v4 change)
+
+**Key Design Tokens**:
+```css
+:root {
+  --primary: oklch(0.216 0.006 56.043);
+  --background: oklch(1 0 0);
+  --font-sans: var(--font-geist-sans);
+  --font-display: var(--font-almendra-display);
+  --header-height: 3rem;
+  --sidebar-width: 16rem;
+  --transition-base: 200ms cubic-bezier(0.4, 0.2, 1);
+}
+```
+
+#### Component Architecture - Unified Header Pattern
+
+**Previous Approach** (Rejected):
+- macOS-style menubar with File/Edit/View menus
+- Separate AppMenubar component
+- Functionality buried in dropdown menus
+
+**New Approach** (Implemented):
+- Single unified header with all functionality visible
+- AppHeader component with three-section layout:
+  - **Left**: Sidebar toggle + Logo
+  - **Center**: Search bar (prominent, takes most space)
+  - **Right**: Upload button + Folder dropdown + User menu
+
+**File**: [frontend/components/layout/AppHeader.tsx](frontend/components/layout/AppHeader.tsx) - NEW
+
+**Key Features**:
+- Fixed height (`h-16`) to prevent layout issues
+- `shrink-0` to prevent flex shrinking
+- `z-50` for proper stacking above sidebar
+- `sticky top-0` for always-visible header
+- Search bar with icon and placeholder
+- Responsive design (hides labels on small screens)
+
+#### Component Extraction
+
+**1. DocumentCard Component** - [frontend/components/documents/DocumentCard.tsx](frontend/components/documents/DocumentCard.tsx) - NEW
+
+**Purpose**: Reusable card for displaying individual documents
+
+**Features**:
+- Context-aware buttons (different in collections vs all docs)
+- Document metadata display (title, authors, date, year)
+- Hover effects (shadow-md, blue border)
+- Action buttons with proper event propagation handling
+- Uses AddToCollectionDropdown for collection management
+
+**2. DocumentGrid Component** - [frontend/components/documents/DocumentGrid.tsx](frontend/components/documents/DocumentGrid.tsx) - NEW
+
+**Purpose**: Handles document grid layout and states
+
+**Features**:
+- Loading state with spinner
+- Empty state with logo and contextual messages
+- Responsive grid (1 col mobile, 2 tablet, 3 desktop)
+- Maps documents to DocumentCard components
+
+**3. Dialog Components** - Replaced `prompt()` calls
+
+Created three dialog components using shadcn/ui:
+
+- **CreateFolderDialog** - [frontend/components/dialog/CreateFolderDialog.tsx](frontend/components/dialog/CreateFolderDialog.tsx) - NEW
+- **RenameFolderDialog** - [frontend/components/dialog/RenameFolderDialog.tsx](frontend/components/dialog/RenameFolderDialog.tsx) - NEW
+- **DeleteConfirmDialog** - [frontend/components/dialog/DeleteConfirmDialog.tsx](frontend/components/dialog/DeleteConfirmDialog.tsx) - NEW
+
+**Benefits**:
+- Proper validation and error handling
+- Better UX (keyboard navigation, ESC to close, focus management)
+- Consistent styling across app
+- Accessible (ARIA attributes from shadcn)
+
+**4. AppSidebar Component** - [frontend/components/layout/AppSidebar.tsx](frontend/components/layout/AppSidebar.tsx) - SIMPLIFIED
+
+**Changes**:
+- Simplified to pure wrapper for FolderTree
+- Uses shadcn Sidebar components (Sidebar, SidebarContent, SidebarGroup, etc.)
+- `collapsible="offcanvas"` mode (completely hides when collapsed)
+- Removed conflicting z-index and pointer-events styles
+- `top-16` positioning to sit below header
+
+#### Dashboard Layout Architecture - CRITICAL FIX
+
+**Problem Discovered**: Content pushed to right side, requiring horizontal scroll
+
+**Root Cause**: SidebarProvider component from shadcn already creates a flex wrapper with specific classes (`flex min-h-svh w-full`). Adding another flex container caused layout conflict.
+
+**Solution** - [frontend/app/dashboard/page.tsx](frontend/app/dashboard/page.tsx):
+
+**Wrong Structure** (Initial attempt):
+```typescript
+<div className="min-h-screen flex flex-col">
+  <SidebarProvider>
+    <AppHeader />
+    <div className="flex-1 flex">
+      <AppSidebar />
+      <main />
+    </div>
+  </SidebarProvider>
+</div>
+```
+
+**Correct Structure** (Final):
+```typescript
+<SidebarProvider defaultOpen={true} className="flex flex-col">
+  <AppHeader />
+  <div className="flex-1 flex overflow-hidden h-[calc(100vh-4rem)]">
+    <AppSidebar />
+    <main className="flex-1 overflow-auto relative z-0" />
+  </div>
+  {/* Dialogs outside SidebarProvider for proper stacking */}
+</SidebarProvider>
+```
+
+**Key Points**:
+- SidebarProvider must be outermost wrapper
+- Pass `className="flex flex-col"` to SidebarProvider to override its default flex behavior
+- Content wrapper uses `h-[calc(100vh-4rem)]` to account for header height
+- Dialogs placed outside SidebarProvider for proper z-index stacking
+- No additional wrapper divs that conflict with shadcn's layout system
+
+#### Technical Issues Resolved
+
+**Issue 1: Tailwind v4 @layer components error**
+- **Problem**: `@layer components` doesn't work in Tailwind v4
+- **Solution**: Use `@utility` for custom utilities instead
+
+**Issue 2: Documents fetched but not displayed**
+- **Problem**: Data loading (verified in console) but not visible on screen
+- **Root cause**: Layout issue - SidebarProvider's flex wrapper conflicting with extra div
+- **Solution**: Remove outer wrapper, use SidebarProvider as main container
+
+**Issue 3: Content pushed to right requiring scroll**
+- **Problem**: Main content area positioned off-screen to the right
+- **Root cause**: Double flex container causing layout calculation errors
+- **Solution**: Single SidebarProvider wrapper with proper className override
+
+**Issue 4: defaultOpen={false} vs defaultOpen={true}**
+- **Problem**: Sidebar defaulting to closed caused layout shifts
+- **Solution**: Changed to `defaultOpen={true}` for stable initial layout
+
+**Issue 5: z-index conflicts**
+- **Initial thought**: z-index issue blocking content
+- **Reality**: Layout issue, not z-index (removing debug styles didn't help)
+- **Learning**: Always check layout structure before z-index debugging
+
+#### Files Modified This Session
+
+**Frontend - Layout Components**:
+- `frontend/components/layout/AppHeader.tsx` - NEW: Unified header design
+- `frontend/components/layout/AppSidebar.tsx` - SIMPLIFIED: Wrapper for FolderTree
+- `frontend/components/layout/AppMenubar.tsx` - DELETED: macOS menubar approach rejected
+
+**Frontend - Document Components**:
+- `frontend/components/documents/DocumentCard.tsx` - NEW: Extracted from dashboard
+- `frontend/components/documents/DocumentGrid.tsx` - NEW: Grid with states
+
+**Frontend - Dialog Components**:
+- `frontend/components/dialog/CreateFolderDialog.tsx` - NEW: Replace prompt()
+- `frontend/components/dialog/RenameFolderDialog.tsx` - NEW: Replace prompt()
+- `frontend/components/dialog/DeleteConfirmDialog.tsx` - NEW: Replace confirm()
+
+**Frontend - Main Pages**:
+- `frontend/app/dashboard/page.tsx` - MAJOR REFACTOR: New layout structure, uses all new components
+- `frontend/app/globals.css` - COMPLETE REDESIGN: Design token system
+
+#### Key Learnings
+
+**shadcn/ui Sidebar Layout Pattern**:
+- SidebarProvider creates its own flex wrapper
+- Don't add additional flex containers that conflict
+- Use className prop to override default behavior when needed
+- SidebarProvider must wrap both header and content for SidebarTrigger context
+
+**React Component Extraction Benefits**:
+- Easier to test individual components
+- Reduces dashboard complexity (from 450+ lines to cleaner structure)
+- Reusable across different views
+- Better separation of concerns
+
+**Layout Debugging Approach**:
+1. Check if data exists (console.log, network tab)
+2. Check if elements are in DOM (browser DevTools)
+3. Check layout structure (flex containers, positioning)
+4. Check z-index and stacking contexts (only after ruling out layout)
+5. Use temporary background colors to visualize element boundaries
+
+**CSS Architecture**:
+- Design tokens in CSS variables allow theme changes in one place
+- OKLCH color space provides better perceptual uniformity than RGB/HSL
+- Tailwind v4 requires different approach for custom utilities
+- `@theme inline` integrates CSS variables with Tailwind
+
+#### Current State
+
+**What Works**:
+- ✅ Unified header with search, upload, folder creation, user menu
+- ✅ Sidebar with collections tree (collapsible offcanvas mode)
+- ✅ Document grid with proper card display
+- ✅ All dialogs use proper modal components (no more `window.confirm()` or `window.alert()`)
+- ✅ Toast notifications for user feedback (using Sonner library)
+- ✅ Responsive layout (header, sidebar, content area)
+- ✅ Data fetching and display working correctly
+- ✅ Proper z-index stacking (header > sidebar > content)
+- ✅ Compact document cards with icon-only buttons and tooltips
+- ✅ Text truncation in sidebar to prevent horizontal overflow
+- ✅ Inter font for better readability (replaced Almendra)
+
+**Component Architecture**:
+```
+Dashboard Page
+├── SidebarProvider (outermost, handles context)
+│   ├── AppHeader (z-50, fixed height)
+│   ├── Content Wrapper (flex-row)
+│   │   ├── AppSidebar (collapsible)
+│   │   │   └── FolderTree (collections)
+│   │   └── Main Content (flex-1)
+│   │       ├── Page Header
+│   │       ├── Upload Input (hidden)
+│   │       ├── Upload Status
+│   │       └── DocumentGrid
+│   │           └── DocumentCard (repeated)
+│   └── Dialogs (outside main layout for stacking)
+│       ├── CreateFolderDialog
+│       ├── RenameFolderDialog
+│       ├── DeleteConfirmDialog
+│       ├── RemoveFromCollectionDialog
+│       ├── DeleteDocumentDialog
+│       └── AddToCollectionDialog
+```
+
+**Dialog Components**:
+- `RemoveFromCollectionDialog` - Removes document from specific collection (orange button)
+- `DeleteDocumentDialog` - Permanently deletes document from all collections (red button)
+- `AddToCollectionDialog` - Adds document to selected collection
+- All dialogs use shadcn AlertDialog component with proper state management
+- Toast notifications show success/error feedback after actions
+
+**Search Functionality**:
+- ✅ Real-time search implementation (triggers on every keystroke)
+- ✅ Backend search endpoint with authentication (`/api/documents/search`)
+- ✅ Fuzzy search using PostgreSQL pg_trgm extension with `word_similarity()`
+- ✅ Searches across: title, abstract, journal, authors, keywords
+- ✅ Typo tolerance (e.g., "artifical" matches "artificial" with 0.7 similarity)
+- ✅ Results ranked by best fuzzy match score (0.3 threshold)
+- ✅ Search state management with loading indicator
+- ✅ Toast notifications for search errors
+
+**Search Implementation Details**:
+```rust
+// Backend: handlers.rs - search_documents
+WHERE user_id = $1
+AND (
+    word_similarity($2, COALESCE(title, '')) > 0.3
+    OR word_similarity($2, COALESCE(abstract_text, '')) > 0.3
+    OR word_similarity($2, COALESCE(journal, '')) > 0.3
+    OR EXISTS (SELECT 1 FROM unnest(authors) AS author WHERE word_similarity($2, author) > 0.3)
+    OR EXISTS (SELECT 1 FROM unnest(keywords) AS keyword WHERE word_similarity($2, keyword) > 0.3)
+)
+ORDER BY
+    GREATEST(
+        word_similarity($2, COALESCE(title, '')),
+        word_similarity($2, COALESCE(abstract_text, '')),
+        word_similarity($2, COALESCE(journal, ''))
+    ) DESC
+```
+
+**Migration Applied**:
+- `20251030022229_enable_fuzzy_search.sql` - Enables pg_trgm extension and creates GIN indexes
+
+**Next Steps** (Suggested for future sessions):
+1. Optimize Docker build caching for faster backend rebuilds
+2. Add keyboard shortcuts (Cmd+K for search, Cmd+U for upload)
+3. Add loading skeletons instead of spinner
+4. Implement document filtering/sorting
+5. Add drag-and-drop for documents into collections
+6. Mobile responsive improvements (touch gestures for sidebar)

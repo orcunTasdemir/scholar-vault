@@ -73,16 +73,20 @@ export function AppHeader({
         {/* RIGHT: Actions + User Menu */}
         <div className="flex items-center gap-2 ml-auto">
           {/* Upload Button */}
-          <Button onClick={onUploadClick} size="sm" className="gap-2">
+          <Button
+            onClick={onUploadClick}
+            size="sm"
+            className="gap-2 px-8 py-4 bg-[#8B4513] hover:bg-[#8B4513] text-white font-bold rounded-lg shadow-[0_6px_0_#5A2E0A] hover:translate-y-[2px] hover:shadow-[0_4px_0_#5A2E0A] active:translate-y-[6px] active:shadow-none transition-all duration-150"
+          >
             <Upload className="h-4 w-4" />
             <span className="hidden sm:inline">Upload</span>
           </Button>
 
           {/* New Collection Button */}
           <Button
-            variant="outline"
+            // variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-2 px-8 py-4 bg-[#8B4513] hover:bg-[#8B4513] text-white hover:text-white font-bold rounded-lg shadow-[0_6px_0_#5A2E0A] hover:translate-y-[2px] hover:shadow-[0_4px_0_#5A2E0A] active:translate-y-[6px] active:shadow-none transition-all duration-150"
             onClick={onCreateFolder}
           >
             <FolderPlus className="h-4 w-4" />
@@ -106,17 +110,17 @@ export function AppHeader({
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="rounded-lg hover:bg-accent p-2">
+              <button className="relative rounded-full p-[4px] bg-gray-100 shadow-[0_6px_0_#b7967e] hover:translate-y-[2px] hover:shadow-[0_4px_0_#b7967e] active:translate-y-[6px] active:shadow-none transition-all duration-150">
                 {user.profile_image_url ? (
                   <Image
                     src={`http://10.0.0.57:3000/${user.profile_image_url}`}
                     alt={user.username || "User"}
                     width={32}
                     height={32}
-                    className="rounded-full"
+                    className="rounded-full border-0 border-white shadow-inner select-none pointer-events-none"
                   />
                 ) : (
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold">
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold border-2 border-white shadow-inner select-none pointer-events-none">
                     {(user.username || user.email).charAt(0).toUpperCase()}
                   </div>
                 )}

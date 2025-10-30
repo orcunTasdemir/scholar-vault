@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "sonner";
+import { Send, MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +19,13 @@ export default function DocumentDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [showPDF, setShowPDF] = useState(false);
+
+  const [showChat, setShowChat] = useState(false);
+  const [messages, setMessages] = useState<
+    Array<{ role: "user" | "assistant"; content: string }>
+  >([]);
+  const [chatInput, setChatInput] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   const documentId = params.id as string;
 
@@ -64,6 +73,43 @@ export default function DocumentDetailPage() {
       </div>
     );
   }
+
+  const handleSendMessage = async () => {
+    if (!chatInput.trim() || !token || isSending) return;
+
+    const userMessage = chatInput.trim();
+    setChatInput("");
+
+    //add user messages to chat
+    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+    setIsSending(true);
+
+    try {
+      const response = await api.chatWithDocument(
+        token,
+        documentId,
+        userMessage
+      );
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: response },
+      ]);
+    } catch (error) {
+      console.error("Chat error: ", error);
+      toast.error("Failed to send message");
+      //Remove the user message if failed
+      setMessages((prev) => prev.slice(0, -1));
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
 
   return (
     <div className="min-h-screen ">
@@ -244,7 +290,7 @@ export default function DocumentDetailPage() {
               Edit Document
             </button>
 
-            {/* PDF Download Button */}
+            {/* PDF Buttons */}
             {document.pdf_url && (
               <>
                 <button
@@ -253,6 +299,15 @@ export default function DocumentDetailPage() {
                 >
                   {showPDF ? "Hide PDF" : "Show PDF"}
                 </button>
+
+                <button
+                  onClick={() => setShowChat(!showChat)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  {showChat ? "Hide Chat" : "Chat with Document"}
+                </button>
+
                 <a
                   href={`${API_BASE_URL}/${document.pdf_url}`}
                   download
@@ -272,6 +327,90 @@ export default function DocumentDetailPage() {
                 className="w-full h-[800px] border border-gray-300 rounded-md"
                 title="PDF Viewer"
               />
+            </div>
+          )}
+
+          {/* Chat Interface */}
+          {document.pdf_url && showChat && (
+            <div className="mt-6 border border-gray-300 rounded-lg overflow-hidden">
+              <div className="bg-purple-50 px-4 py-3 border-b border-gray-300">
+                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Chat with Document
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Ask questions about this paper and get answers from an AI that
+                  has read it.
+                </p>
+              </div>
+
+              {/* Messages */}
+              <div className="h-[400px] overflow-y-auto p-4 space-y-4 bg-white">
+                {messages.length === 0 ? (
+                  <div className="text-center text-gray-500 mt-20">
+                    <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                    <p className="font-medium">Start a conversation</p>
+                    <p className="text-sm mt-1">
+                      Ask questions about the paper's methodology, findings, or
+                      implications
+                    </p>
+                  </div>
+                ) : (
+                  messages.map((msg, index) => (
+                    <div
+                      key={index}
+                      className={`flex ${
+                        msg.role === "user" ? "justify-end" : "justify-start"
+                      }`}
+                    >
+                      <div
+                        className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                          msg.role === "user"
+                            ? "bg-purple-600 text-white"
+                            : "bg-gray-100 text-gray-900"
+                        }`}
+                      >
+                        <p className="text-sm whitespace-pre-wrap">
+                          {msg.content}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+                {isSending && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[80%] rounded-lg px-4 py-2 bg-gray-100">
+                      <p className="text-sm text-gray-500">Thinking...</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Input */}
+              <div className="border-t border-gray-300 p-4 bg-gray-50">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Ask a question about this paper..."
+                    disabled={isSending}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100"
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={!chatInput.trim() || isSending}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    <Send className="h-4 w-4" />
+                    Send
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Press Enter to send, Shift+Enter for new line
+                </p>
+              </div>
             </div>
           )}
         </div>

@@ -274,7 +274,7 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      <LibraryBig />
+      <LibraryBig className="scale-140" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );

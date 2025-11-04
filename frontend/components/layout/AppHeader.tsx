@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, Upload, FolderPlus, User } from "lucide-react";
+import { Search, Upload, FolderPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -39,7 +39,7 @@ export function AppHeader({
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-100/20 h-16 shrink-0">
+    <header className="text-off-white/80 sticky top-0 z-50 w-full border-none h-16 shrink-0 bg-deep-charcoal">
       <div className="flex h-full items-center gap-4 px-6 w-full max-w-full">
         {/* LEFT: Sidebar Toggle + Logo */}
         <div className="flex basis-1/3 items-center gap-3">
@@ -56,8 +56,8 @@ export function AppHeader({
         </div>
 
         {/* CENTER: Search Bar */}
-        <div className="flex-1 basis-1/3 max-w-2xl relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground " />
+        <div className="flex-1 basis-1/3 max-w-2xl relative text-off-white">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-off-white " />
           <Input
             type="search"
             placeholder="Search documents, authors, keywords..."
@@ -66,7 +66,7 @@ export function AppHeader({
               setSearchQuery(e.target.value);
               onSearch(e.target.value);
             }}
-            className="pl-10 bg-gray-100/40"
+            className="pl-10 bg-off-white/5 text-off-white"
           />
         </div>
 
@@ -76,57 +76,42 @@ export function AppHeader({
           <Button
             onClick={onUploadClick}
             size="sm"
-            className="gap-2 px-8 py-4 bg-[#8B4513] hover:bg-[#8B4513] text-white font-bold rounded-lg shadow-[0_6px_0_#5A2E0A] hover:translate-y-[2px] hover:shadow-[0_4px_0_#5A2E0A] active:translate-y-[6px] active:shadow-none transition-all duration-150"
+            className="gap-2 px-8 py-4 bg-old-paper-yellow text-off-white font-bold rounded-lg"
           >
             <Upload className="h-4 w-4" />
             <span className="hidden sm:inline">Upload</span>
           </Button>
-
           {/* New Collection Button */}
           <Button
             // variant="outline"
             size="sm"
-            className="gap-2 px-8 py-4 bg-[#8B4513] hover:bg-[#8B4513] text-white hover:text-white font-bold rounded-lg shadow-[0_6px_0_#5A2E0A] hover:translate-y-[2px] hover:shadow-[0_4px_0_#5A2E0A] active:translate-y-[6px] active:shadow-none transition-all duration-150"
+            className="gap-2 px-8 py-4 bg-old-paper-yellow text-off-white font-bold rounded-lg"
             onClick={onCreateFolder}
           >
             <FolderPlus className="h-4 w-4" />
             <span className="hidden sm:inline">New Collection</span>
           </Button>
-          {/* <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <FolderPlus className="h-4 w-4" />
-                <span className="hidden sm:inline">New Collection</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onCreateFolder}>
-                <FolderPlus className="mr-2 h-4 w-4" />
-                New Collection
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu> */}
 
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="relative rounded-full p-[4px] bg-gray-100 shadow-[0_6px_0_#b7967e] hover:translate-y-[2px] hover:shadow-[0_4px_0_#b7967e] active:translate-y-[6px] active:shadow-none transition-all duration-150">
+              <button className="relative rounded-full p-0.5 bg-gray-100 border-none">
                 {user.profile_image_url ? (
                   <Image
-                    src={`http://10.0.0.57:3000/${user.profile_image_url}`}
+                    src={`http://10.0.0.251:3000/${user.profile_image_url}`}
                     alt={user.username || "User"}
                     width={32}
                     height={32}
-                    className="rounded-full border-0 border-white shadow-inner select-none pointer-events-none"
+                    className="rounded-full select-none pointer-events-none"
                   />
                 ) : (
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold border-2 border-white shadow-inner select-none pointer-events-none">
+                  <div className="w-8 h-8 bg-muted-teal rounded-full flex items-center justify-center text-off-white font-semibold select-none pointer-events-none">
                     {(user.username || user.email).charAt(0).toUpperCase()}
                   </div>
                 )}
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="mt-3 w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col gap-1">
                   <p className="text-sm font-medium">

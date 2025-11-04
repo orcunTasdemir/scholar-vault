@@ -17,14 +17,12 @@ export function FolderTree({
   collections,
   selectedCollectionId,
   onSelectCollection,
-  onCreateFolder,
   onRenameFolder,
   onDeleteFolder,
 }: FolderTreeProps) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set()
   );
-
   // Build tree structure from flat array
   const buildTree = (parentId: string | null): Collection[] => {
     return collections
@@ -51,10 +49,10 @@ export function FolderTree({
     const isSelected = selectedCollectionId === collection.id;
 
     return (
-      <div key={collection.id} className="flex flex-col">
+      <div key={collection.id} className="flex flex-col text-off-white">
         <div
-          className={`flex items-center gap-2 py-2 px-3 cursor-pointer hover:bg-gray-100 ${
-            isSelected ? "bg-blue-50 border-l-4 border-blue-600" : ""
+          className={`flex items-center gap-2 py-2 px-3 cursor-pointer hover:bg-muted-teal/10 ${
+            isSelected ? "bg-muted-teal/20 border-l-4 border-muted-teal" : ""
           }`}
           style={{
             paddingLeft: `${level * 20 + 12}px`,
@@ -88,7 +86,7 @@ export function FolderTree({
               e.stopPropagation();
               onRenameFolder(collection.id);
             }}
-            className="shrink-0 text-gray-500 hover:text-gray-700 p-1"
+            className="shrink-0  hover:text-old-paper-yellow p-1"
             title="Rename"
           >
             <Pencil className="w-4 h-4" />
@@ -98,7 +96,7 @@ export function FolderTree({
               e.stopPropagation();
               onDeleteFolder(collection.id);
             }}
-            className="shrink-0 text-gray-500 hover:text-red-600 p-1"
+            className="shrink-0 hover:text-red-600/60 p-1"
             title="Delete"
           >
             <BookX className="w-4 h-4" />
@@ -115,18 +113,10 @@ export function FolderTree({
 
   return (
     <div className="h-full overflow-y-auto">
-      {/* <div className="p-4">
-        <button
-          onClick={() => onCreateFolder(null)}
-          className="text-sm text-blue-600 hover:text-blue-800"
-        >
-          + New Collection
-        </button>
-      </div> */}
       <div
-        className={`py-2 px-3 cursor-pointer hover:bg-gray-100 ${
+        className={`py-2 px-3 cursor-pointer hover:bg-muted-teal/10 ${
           selectedCollectionId === null
-            ? "bg-blue-50 border-l-4 border-blue-600"
+            ? "bg-muted-teal/20 border-l-4 border-muted-teal"
             : ""
         }`}
         onClick={() => onSelectCollection(null)}

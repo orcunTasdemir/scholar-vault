@@ -14,6 +14,17 @@
 
 @layer base {
   :root {
+    /* -------- APP COLORS BRANDING -------- */
+    /* Deep Charcoal → #3B3A30
+       Old Paper Yellow → #E5C77B
+       Muted Teal → #3A7D7C
+       Off-white → #FAF8F0 */
+
+    --deep-charcoal: oklch(29.45% 0.015 117.7);
+    --old-paper-yellow: oklch(82.7% 0.13 85.5);
+    --muted-teal: oklch(55.2% 0.08 194.3);
+    --off-white: oklch(97.1% 0.02 95);
+
     /* -------- Colors -------- */
     --background: oklch(1 0 0);
     --foreground: oklch(0.147 0.004 49.25);
@@ -144,6 +155,12 @@
 
 /* Tailwind v4 theme integration */
 @theme inline {
+  /* here */
+  --color-deep-charcoal: var(--deep-charcoal);
+  --color-old-paper-yellow: var(--old-paper-yellow);
+  --color-muted-teal: var(--muted-teal);
+  --color-off-white: var(--off-white);
+  /* here */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);

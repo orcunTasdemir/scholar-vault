@@ -5,7 +5,6 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
 } from "@/components/ui/sidebar";
 
@@ -17,7 +16,7 @@ export function AppSidebar({ children }: AppSidebarProps) {
   return (
     <Sidebar
       collapsible="offcanvas"
-      className="border-r border-gray-100/20 top-16"
+      className="border-r border-gray-100/20 top-16 bg-deep-charcoal/70 text-off-white/80"
     >
       <SidebarContent>
         <SidebarGroup>

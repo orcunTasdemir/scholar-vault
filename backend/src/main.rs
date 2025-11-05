@@ -6,6 +6,7 @@ mod middleware;
 mod models;
 mod routes;
 mod state;
+mod subscription_handlers;
 
 use config::Config;
 use routes::create_routes;
@@ -24,7 +25,7 @@ async fn main() {
         .expect("Failed to create a database pool");
     println!("Connected the the database: OK");
 
-    let app_state = AppState::new(pool, config.jwt_secret);
+    let app_state = AppState::new(pool, config.jwt_secret.clone(), config);
 
     let cors = CorsLayer::new()
         .allow_origin(Any)

@@ -1,4 +1,4 @@
-use crate::{handlers, handlers::upload_pdf, state::AppState};
+use crate::{handlers, handlers::upload_pdf, state::AppState, subscription_handlers};
 use axum::{
     Router,
     routing::{delete, get, post, put},
@@ -45,6 +45,18 @@ pub fn create_routes(state: AppState) -> Router {
         .route(
             "/api/documents/{id}/chat",
             post(handlers::chat_with_document),
+        )
+        .route(
+            "/api/subscriptions/checkout",
+            post(subscription_handlers::create_checkout_session),
+        )
+        .route(
+            "/api/subscriptions/info",
+            get(subscription_handlers::get_subscription_info),
+        )
+        .route(
+            "/api/subscriptions/cancel",
+            post(subscription_handlers::cancel_subscription),
         )
         .with_state(state)
 }

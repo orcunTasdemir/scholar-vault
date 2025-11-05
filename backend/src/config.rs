@@ -5,6 +5,9 @@ use std::time::Duration;
 pub struct Config {
     pub database_url: String,
     pub jwt_secret: String,
+    pub stripe_secret_key: String,
+    pub stripe_webhook_secret: String,
+    pub stripe_publishable_key: String,
 }
 
 impl Config {
@@ -12,13 +15,21 @@ impl Config {
         dotenvy::dotenv().ok();
         let database_url =
             std::env::var("DATABASE_URL").expect("DATABASE_URL needs to be set in the .env file");
-
         let jwt_secret =
             std::env::var("JWT_SECRET").expect("JWT_SECRET needs to be set in the .env file");
+        let stripe_secret_key =
+            std::env::var("STRIPE_SECRET_KEY").expect("STRIPE_SECRET_KEY must be set");
+        let stripe_webhook_secret =
+            std::env::var("STRIPE_WEBHOOK_SECRET").expect("STRIPE_WEBHOOK_SECRET must be set");
+        let stripe_publishable_key =
+            std::env::var("STRIPE_PUBLISHABLE_KEY").expect("STRIPE_PUBLISHABLE_KEY must be set");
 
         Self {
             database_url,
             jwt_secret,
+            stripe_secret_key,
+            stripe_webhook_secret,
+            stripe_publishable_key,
         }
     }
     pub async fn create_pool(&self) -> Result<PgPool, sqlx::Error> {

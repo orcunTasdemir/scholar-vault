@@ -424,7 +424,7 @@ export default function DashboardPage() {
           <div className="p-6">
             {/* Page Header */}
             <div className="mb-6">
-              <h2 className="text-2xl font-normal font-display">
+              <h2 className="font-logo text-xl text-off-white bg-muted-teal/70 p-2 w-fit rounded-xl">
                 {isSearching
                   ? `Search results for "${searchQuery}"`
                   : selectedCollection?.name || "All Documents"}

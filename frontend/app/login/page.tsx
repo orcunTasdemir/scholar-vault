@@ -307,7 +307,9 @@ export default function LoginPage() {
               <span className=" text-lg font-light">
                 Sign in to&nbsp;&nbsp;
               </span>
-              <span className="font-logo">ScholarVault</span>
+              <span className="font-logo">
+                ScholarVault<span className="text-[10px]">V0.1</span>
+              </span>
             </h2>
           </div>
         </div>

@@ -58,7 +58,7 @@ export function DocumentCard({
   };
 
   return (
-    <div className="border rounded-lg bg-white hover:shadow-md transition-shadow group">
+    <div className=" rounded-lg bg-deep-charcoal/70 text-off-white hover:shadow-md transition-shadow group">
       {/* Document Info - Clickable */}
       <div
         className="p-4 cursor-pointer"
@@ -70,7 +70,7 @@ export function DocumentCard({
             <h3 className="font-semibold line-clamp-2 mb-2">
               {document.title}
             </h3>
-            <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+            <div className="flex flex-col gap-1 text-xs">
               {document.authors && document.authors.length > 0 && (
                 <div className="flex items-center gap-1.5">
                   <User className="w-3 h-3 shrink-0" />
@@ -97,7 +97,7 @@ export function DocumentCard({
 
       {/* Action Buttons - Compact */}
       <div
-        className="flex items-center gap-1 p-2 border-t bg-gray-50"
+        className="flex items-center gap-1 p-2"
         onClick={(e) => e.stopPropagation()}
       >
         <Button

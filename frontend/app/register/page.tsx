@@ -55,11 +55,11 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-deep-charcoal py-12 px-4 sm:px-6 text-off-white lg:px-8 relative overflow-hidden">
       {/* Left flowing papers - 2 columns */}
-      <div className="hidden lg:flex absolute left-0 top-0 bottom-0 w-3xl gap-6 overflow-hidden pl-12">
+      <div className="hidden lg:flex absolute left-0 top-0 bottom-0 w-3xl gap-2 overflow-hidden pl-12">
         {/* Left column 1 - align right */}
-        <div className="flex-1 overflow-hidden relative flex flex-col items-end">
-          <div className="animate-flow-down">
-            <div className="space-y-2 pb-2">
+        <div className="flex-1 overflow-hidden relative flex flex-col">
+          <div className="animate-flow-down flex flex-col items-end">
+            <div className="space-y-2 pb-2 flex flex-col items-end">
               {[...Array(20)].map((_, i) => {
                 const height = 420 + ((i * 13) % 60);
                 const width = height / 1.414;
@@ -85,13 +85,13 @@ export default function RegisterPage() {
                 );
               })}
             </div>
-            <div className="space-y-2 pb-2">
+            <div className="space-y-2 pb-2 flex flex-col items-end">
               {[...Array(20)].map((_, i) => {
                 const height = 420 + ((i * 13) % 60);
                 const width = height / 1.414;
                 return (
                   <div
-                    key={`dup-${i}`}
+                    key={i}
                     className="bg-white border border-off-white/20 rounded-lg overflow-hidden relative"
                     style={{
                       height: `${height}px`,
@@ -114,9 +114,9 @@ export default function RegisterPage() {
           </div>
         </div>
         {/* Left column 2 - align left */}
-        <div className="flex-1 overflow-hidden relative flex flex-col items-start">
-          <div className="animate-flow-down-delayed">
-            <div className="space-y-2 pb-2">
+        <div className="flex-1 overflow-hidden relative flex flex-col">
+          <div className="animate-flow-down-delayed flex flex-col items-start">
+            <div className="space-y-2 pb-2 flex flex-col items-start">
               {[...Array(20)].map((_, i) => {
                 const height = 420 + ((i * 17) % 60);
                 const width = height / 1.414;
@@ -142,13 +142,13 @@ export default function RegisterPage() {
                 );
               })}
             </div>
-            <div className="space-y-2 pb-2">
+            <div className="space-y-2 pb-2 flex flex-col items-start">
               {[...Array(20)].map((_, i) => {
                 const height = 420 + ((i * 17) % 60);
                 const width = height / 1.414;
                 return (
                   <div
-                    key={`dup-${i}`}
+                    key={i}
                     className="bg-white border border-off-white/20 rounded-lg overflow-hidden relative"
                     style={{
                       height: `${height}px`,
@@ -173,11 +173,11 @@ export default function RegisterPage() {
       </div>
 
       {/* Right flowing papers - 2 columns */}
-      <div className="hidden lg:flex absolute right-0 top-0 bottom-0 w-3xl gap-6 overflow-hidden pr-12">
+      <div className="hidden lg:flex absolute right-0 top-0 bottom-0 w-3xl gap-2 overflow-hidden pr-12">
         {/* Right column 1 - align right */}
         <div className="flex-1 overflow-hidden relative flex flex-col items-end">
-          <div className="animate-flow-down-delayed-more">
-            <div className="space-y-2 pb-2">
+          <div className="animate-flow-down-delayed-more flex flex-col items-end">
+            <div className="space-y-2 pb-2 flex flex-col items-end">
               {[...Array(20)].map((_, i) => {
                 const height = 420 + ((i * 19) % 60);
                 const width = height / 1.414;
@@ -209,7 +209,7 @@ export default function RegisterPage() {
                 const width = height / 1.414;
                 return (
                   <div
-                    key={`dup-${i}`}
+                    key={i}
                     className="bg-white border border-off-white/20 rounded-lg overflow-hidden relative"
                     style={{
                       height: `${height}px`,
@@ -233,8 +233,8 @@ export default function RegisterPage() {
         </div>
         {/* Right column 2 - align left */}
         <div className="flex-1 overflow-hidden relative flex flex-col items-start">
-          <div className="animate-flow-down-delayed-most">
-            <div className="space-y-2 pb-2">
+          <div className="animate-flow-down-delayed-most flex flex-col items-start">
+            <div className="space-y-2 pb-2 flex flex-col items-start">
               {[...Array(20)].map((_, i) => {
                 const height = 420 + ((i * 23) % 60);
                 const width = height / 1.414;
@@ -266,7 +266,7 @@ export default function RegisterPage() {
                 const width = height / 1.414;
                 return (
                   <div
-                    key={`dup-${i}`}
+                    key={i}
                     className="bg-white border border-off-white/20 rounded-lg overflow-hidden relative"
                     style={{
                       height: `${height}px`,
@@ -303,8 +303,11 @@ export default function RegisterPage() {
             <h2 className="text-3xl font-bold ">
               <span className=" text-lg font-light">
                 Create your account for&nbsp;&nbsp;
+              </span>{" "}
+              <br />
+              <span className="font-logo">
+                ScholarVault<span className="text-[10px]">V0.1</span>
               </span>
-              <span className="font-logo">ScholarVault</span>
             </h2>
           </div>
         </div>
@@ -319,7 +322,7 @@ export default function RegisterPage() {
             </div>
           )}
           <div className="space-y-4">
-            <div>
+            <div className="flex flex-col">
               <label
                 htmlFor="username"
                 className="block text-sm font-medium mb-1"
@@ -334,6 +337,9 @@ export default function RegisterPage() {
                 disabled={isLoading}
                 className="w-full px-3 py-2 border border-off-white/20 bg-deep-charcoal/50 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-muted-teal focus:border-muted-teal disabled:opacity-50 disabled:cursor-not-allowed"
               />
+              <span className="text-[11px] flex justify-end">
+                * will be assigned generated username if left empty
+              </span>
             </div>
 
             <div>

@@ -50,7 +50,7 @@ export function AppHeader({
           >
             <Image src="/logo.png" alt="ScholarVault" width={32} height={32} />
             <h1 className="font-logo text-2xl hidden sm:block ">
-              ScholarVault
+              ScholarVault <span className="text-[10px]">V0.1</span>
             </h1>
           </div>
         </div>

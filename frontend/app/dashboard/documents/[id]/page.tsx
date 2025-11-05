@@ -6,8 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, Document } from "@/lib/api";
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://10.0.0.251:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://10.0.0.53:3000";
 
 import Image from "next/image";
 
@@ -352,8 +351,8 @@ export default function DocumentDetailPage() {
                     <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-400" />
                     <p className="font-medium">Start a conversation</p>
                     <p className="text-sm mt-1">
-                      Ask questions about the paper's methodology, findings, or
-                      implications
+                      Ask questions about the paper&apos;s methodology,
+                      findings, or implications
                     </p>
                   </div>
                 ) : (

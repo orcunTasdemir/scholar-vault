@@ -170,7 +170,7 @@ export default function DashboardPage() {
 
     try {
       const response = await fetch(
-        "http://10.0.0.251:3000/api/documents/upload",
+        "http://10.0.0.53:3000/api/documents/upload",
         {
           method: "POST",
           headers: {

@@ -1,9 +1,9 @@
 # Environment variables
 .env
 *.env
-
+.claude/
 context.md
-
+papers/
 # IDE
 .idea/
 *.swp

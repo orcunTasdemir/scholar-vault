@@ -98,7 +98,7 @@ export function AppHeader({
               <button className="relative rounded-full p-0.5 bg-gray-100 border-none">
                 {user.profile_image_url ? (
                   <Image
-                    src={`http://10.0.0.251:3000/${user.profile_image_url}`}
+                    src={`http://10.0.0.53:3000/${user.profile_image_url}`}
                     alt={user.username || "User"}
                     width={32}
                     height={32}

@@ -249,3 +249,32 @@
     transform: translateY(0);
   }
 }
+
+@keyframes flowDown {
+  0% {
+    transform: translateY(-50%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Animation utilities - seamless infinite loop */
+@utility animate-flow-down {
+  animation: flowDown 120s linear infinite;
+}
+
+@utility animate-flow-down-delayed {
+  animation: flowDown 120s linear infinite;
+  animation-delay: -52s;
+}
+
+@utility animate-flow-down-delayed-more {
+  animation: flowDown 120s linear infinite;
+  animation-delay: -79s;
+}
+
+@utility animate-flow-down-delayed-most {
+  animation: flowDown 120s linear infinite;
+  animation-delay: -106s;
+}

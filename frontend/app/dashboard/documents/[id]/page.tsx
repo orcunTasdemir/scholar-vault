@@ -147,116 +147,126 @@ export default function DocumentDetailPage() {
 
       {/* Main Content */}
       <main className="w-screen px-4 sm:px-6 lg:px-8 py-4 h-[calc(100vh-4rem)]">
-        <div className="w-full h-full mx-auto rounded-lg bg-deep-charcoal/80 backdrop-blur-sm border border-off-white/10 p-6 flex flex-row gap-6 overflow-hidden">
+        <div className="w-full h-full mx-auto rounded-lg bg-deep-charcoal/80 backdrop-blur-sm border border-off-white/10 p-6 flex flex-row gap-1 overflow-hidden">
           {/* First Col - Metadata */}
           <div
             className="mx-auto transition-all duration-700 ease-in-out min-w-0 overflow-y-auto"
             style={{
-              flex: showChat ? '0 0 calc(33.333% - 16px)' : '1 1 auto',
+              flex: showChat
+                ? "0 0 calc(20% - 16px)"
+                : showPDF
+                ? "0 0 calc(20% - 16px)"
+                : "1 1 auto",
             }}
           >
-            <div className={`grid grid-cols-1 md:grid-cols-2 ${showChat ? "gap-3" : "gap-6"} transition-all duration-700 ease-in-out`}>
+            <div
+              className={`grid grid-cols-1 gap-1 transition-all duration-700 ease-in-out`}
+            >
               {/* Authors */}
               {document.authors && document.authors.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-muted-teal mb-1">
+                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
                     Authors
                   </label>
-                  <p className="text-off-white">{document.authors.join(", ")}</p>
+                  <p className="text-off-white text-sm">
+                    {document.authors.join(", ")}
+                  </p>
                 </div>
               )}
 
               {/* Year */}
               {document.year && (
                 <div>
-                  <label className="block text-sm font-medium text-muted-teal mb-1">
+                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
                     Year
                   </label>
-                  <p className="text-off-white">{document.year}</p>
+                  <p className="text-off-white text-sm">{document.year}</p>
                 </div>
               )}
 
               {/* Publication Type */}
               {document.publication_type && (
                 <div>
-                  <label className="block text-sm font-medium text-muted-teal mb-1">
+                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
                     Publication Type
                   </label>
-                  <p className="text-off-white">{document.publication_type}</p>
+                  <p className="text-off-white text-sm">
+                    {document.publication_type}
+                  </p>
                 </div>
               )}
 
               {/* Journal */}
               {document.journal && (
                 <div>
-                  <label className="block text-sm font-medium text-muted-teal mb-1">
+                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
                     Journal
                   </label>
-                  <p className="text-off-white">{document.journal}</p>
+                  <p className="text-off-white text-sm">{document.journal}</p>
                 </div>
               )}
 
               {/* Volume */}
               {document.volume && (
                 <div>
-                  <label className="block text-sm font-medium text-muted-teal mb-1">
+                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
                     Volume
                   </label>
-                  <p className="text-off-white">{document.volume}</p>
+                  <p className="text-off-white text-sm">{document.volume}</p>
                 </div>
               )}
 
               {/* Issue */}
               {document.issue && (
                 <div>
-                  <label className="block text-sm font-medium text-muted-teal mb-1">
+                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
                     Issue
                   </label>
-                  <p className="text-off-white">{document.issue}</p>
+                  <p className="text-off-white text-sm">{document.issue}</p>
                 </div>
               )}
 
               {/* Pages */}
               {document.pages && (
                 <div>
-                  <label className="block text-sm font-medium text-muted-teal mb-1">
+                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
                     Pages
                   </label>
-                  <p className="text-off-white">{document.pages}</p>
+                  <p className="text-off-white text-sm">{document.pages}</p>
                 </div>
               )}
 
               {/* Publisher */}
               {document.publisher && (
                 <div>
-                  <label className="block text-sm font-medium text-muted-teal mb-1">
+                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
                     Publisher
                   </label>
-                  <p className="text-off-white">{document.publisher}</p>
+                  <p className="text-off-white text-sm">{document.publisher}</p>
                 </div>
               )}
 
               {/* DOI */}
               {document.doi && (
                 <div>
-                  <label className="block text-sm font-medium text-muted-teal mb-1">
+                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
                     DOI
                   </label>
-                  <p className="text-off-white">{document.doi}</p>
+                  <p className="text-off-white text-sm">{document.doi}</p>
                 </div>
               )}
 
               {/* URL */}
               {document.url && (
                 <div>
-                  <label className="block text-sm font-medium text-muted-teal mb-1">
+                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
                     URL
                   </label>
                   <a
                     href={document.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-muted-teal hover:text-muted-teal/80 break-all underline"
+                    className="text-muted-teal hover:text-muted-teal/80 break-all underline text-sm"
                   >
                     {document.url}
                   </a>
@@ -270,7 +280,7 @@ export default function DocumentDetailPage() {
                 <label className="block text-sm font-medium text-off-white mb-2">
                   Keywords
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1">
                   {document.keywords.map((keyword, index) => (
                     <span
                       key={index}
@@ -287,9 +297,9 @@ export default function DocumentDetailPage() {
             <div
               className="mt-6 overflow-hidden transition-all duration-700 ease-in-out"
               style={{
-                maxHeight: showChat ? '0px' : '2000px',
+                maxHeight: showChat ? "0px" : "2000px",
                 opacity: showChat ? 0 : 1,
-                marginTop: showChat ? '0px' : '24px',
+                marginTop: showChat ? "0px" : "24px",
               }}
             >
               {document.abstract_text && (
@@ -305,7 +315,7 @@ export default function DocumentDetailPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-wrap gap-1">
               <button
                 onClick={() =>
                   router.push(`/dashboard/documents/${documentId}/edit`)
@@ -327,7 +337,7 @@ export default function DocumentDetailPage() {
 
                   <button
                     onClick={() => setShowChat(!showChat)}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-old-paper-yellow/20 hover:bg-old-paper-yellow/30 text-old-paper-yellow border border-old-paper-yellow/30 font-semibold rounded-lg transition-colors"
+                    className="inline-flex items-center gap-1 px-6 py-2.5 bg-old-paper-yellow/20 hover:bg-old-paper-yellow/30 text-old-paper-yellow border border-old-paper-yellow/30 font-semibold rounded-lg transition-colors"
                   >
                     <MessageSquare className="h-4 w-4" />
                     {showChat ? "Hide Chat" : "Chat with Document"}
@@ -350,14 +360,18 @@ export default function DocumentDetailPage() {
             <div
               className="transition-all duration-700 ease-in-out overflow-hidden min-w-0"
               style={{
-                flex: showChat ? '0 0 calc(33.333% - 16px)' : '0 0 0px',
+                flex: showChat
+                  ? showPDF
+                    ? "0 0 calc(40% - 16px)"
+                    : "0 0 calc(80% - 16px)"
+                  : "0 0 0px",
                 opacity: showChat ? 1 : 0,
-                transform: showChat ? 'translateX(0)' : 'translateX(-20px)',
+                transform: showChat ? "translateX(0)" : "translateX(-20px)",
               }}
             >
               <div className="border border-off-white/20 rounded-lg overflow-hidden bg-deep-charcoal/50 flex flex-col h-full">
                 <div className="bg-old-paper-yellow/20 px-4 py-3 border-b border-old-paper-yellow/30">
-                  <h3 className="font-semibold text-off-white flex items-center gap-2">
+                  <h3 className="font-semibold text-off-white flex items-center gap-1">
                     <MessageSquare className="h-5 w-5 text-old-paper-yellow" />
                     Chat with Document
                   </h3>
@@ -372,7 +386,9 @@ export default function DocumentDetailPage() {
                   {messages.length === 0 ? (
                     <div className="text-center text-off-white/60 mt-20">
                       <MessageSquare className="h-12 w-12 mx-auto mb-3 text-old-paper-yellow/50" />
-                      <p className="font-medium text-off-white">Start a conversation</p>
+                      <p className="font-medium text-off-white">
+                        Start a conversation
+                      </p>
                       <p className="text-sm mt-1">
                         Ask questions about the paper&apos;s methodology,
                         findings, or implications
@@ -411,7 +427,7 @@ export default function DocumentDetailPage() {
 
                 {/* Input */}
                 <div className="border-t border-off-white/20 p-4 bg-deep-charcoal/30">
-                  <div className="flex gap-2">
+                  <div className="flex gap-1">
                     <input
                       type="text"
                       value={chatInput}
@@ -424,7 +440,7 @@ export default function DocumentDetailPage() {
                     <button
                       onClick={handleSendMessage}
                       disabled={!chatInput.trim() || isSending}
-                      className="px-4 py-2 bg-old-paper-yellow hover:bg-old-paper-yellow/90 text-deep-charcoal font-semibold rounded-md disabled:bg-off-white/20 disabled:text-off-white/40 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                      className="px-4 py-2 bg-old-paper-yellow hover:bg-old-paper-yellow/90 text-deep-charcoal font-semibold rounded-md disabled:bg-off-white/20 disabled:text-off-white/40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
                     >
                       <Send className="h-4 w-4" />
                       Send
@@ -444,10 +460,12 @@ export default function DocumentDetailPage() {
               className="transition-all duration-700 ease-in-out min-w-0 overflow-hidden"
               style={{
                 flex: showPDF
-                  ? (showChat ? '0 0 calc(33.333% - 16px)' : '1 1 auto')
-                  : '0 0 0px',
+                  ? showChat
+                    ? "0 0 calc(40% - 16px)"
+                    : "0 0 calc(80% - 16px)"
+                  : "0 0 0px",
                 opacity: showPDF ? 1 : 0,
-                transform: showPDF ? 'translateX(0)' : 'translateX(20px)',
+                transform: showPDF ? "translateX(0)" : "translateX(20px)",
               }}
             >
               <iframe

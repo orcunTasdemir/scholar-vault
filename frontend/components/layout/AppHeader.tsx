@@ -66,7 +66,7 @@ export function AppHeader({
               setSearchQuery(e.target.value);
               onSearch(e.target.value);
             }}
-            className="pl-10 bg-off-white/5 text-off-white"
+            className="pl-10 bg-off-white/5 hover:bg-off-white/10 focus:bg-off-white/15 text-off-white transition-colors"
           />
         </div>
 
@@ -76,16 +76,15 @@ export function AppHeader({
           <Button
             onClick={onUploadClick}
             size="sm"
-            className="gap-2 px-8 py-4 bg-old-paper-yellow text-off-white font-bold rounded-lg"
+            className="gap-2 px-8 py-4 bg-muted-teal hover:bg-muted-teal/90 text-off-white font-bold rounded-lg"
           >
             <Upload className="h-4 w-4" />
             <span className="hidden sm:inline">Upload</span>
           </Button>
           {/* New Collection Button */}
           <Button
-            // variant="outline"
             size="sm"
-            className="gap-2 px-8 py-4 bg-old-paper-yellow text-off-white font-bold rounded-lg"
+            className="gap-2 px-8 py-4 bg-muted-teal hover:bg-muted-teal/90 text-off-white font-bold rounded-lg"
             onClick={onCreateFolder}
           >
             <FolderPlus className="h-4 w-4" />

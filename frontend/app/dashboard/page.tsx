@@ -76,7 +76,6 @@ export default function DashboardPage() {
       try {
         const docs = await api.getDocuments(token);
         setDocuments(docs);
-        console.log("📄 Fetched documents:", documents);
       } catch (error) {
         console.error("Failed to fetch documents:", error);
       } finally {
@@ -139,17 +138,6 @@ export default function DashboardPage() {
     : selectedCollectionId === null
     ? documents
     : collectionDocuments;
-  // Get displayed documents based on selection
-  // const displayedDocuments =
-  //   selectedCollectionId === null ? documents : collectionDocuments;
-
-  // console.log("🔍 DEBUG INFO:");
-  // console.log("  - documents:", documents);
-  // console.log("  - documents.length:", documents.length);
-  // console.log("  - displayedDocuments:", displayedDocuments);
-  // console.log("  - displayedDocuments.length:", displayedDocuments.length);
-  // console.log("  - isLoading:", isLoading);
-  // console.log("  - selectedCollectionId:", selectedCollectionId);
 
   const selectedCollection = collections.find(
     (c) => c.id === selectedCollectionId
@@ -390,12 +378,6 @@ export default function DashboardPage() {
     }
   };
 
-  console.log("🎨 RENDER - Component state:");
-  console.log("  - documents:", documents);
-  console.log("  - documents.length:", documents.length);
-  console.log("  - isLoading:", isLoading);
-  console.log("  - user:", user);
-  console.log("  - token:", !!token);
   return (
     <SidebarProvider defaultOpen={true} className="flex flex-col">
       {/* Unified Header */}
@@ -420,7 +402,10 @@ export default function DashboardPage() {
         </AppSidebar>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto">
+        <main
+          className="flex-1 overflow-auto bg-cover bg-center bg-fixed"
+          style={{ backgroundImage: "url('/background.png')" }}
+        >
           <div className="p-6">
             {/* Page Header */}
             <div className="mb-6">
@@ -429,7 +414,7 @@ export default function DashboardPage() {
                   ? `Search results for "${searchQuery}"`
                   : selectedCollection?.name || "All Documents"}
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-deep-charcoal font-semibold mt-1 bg-off-white/80 px-2 py-0.5 rounded w-fit">
                 {displayedDocuments.length}{" "}
                 {displayedDocuments.length === 1 ? "document" : "documents"}
               </p>
@@ -447,17 +432,17 @@ export default function DashboardPage() {
 
             {/* Upload Error */}
             {uploadError && (
-              <div className="mb-4 p-4 bg-red-50 border-red-200 rounded-lg text-red-700">
+              <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-lg text-destructive">
                 {uploadError}
               </div>
             )}
 
             {/* Upload Status */}
             {uploadStatus !== "idle" && (
-              <div className="mb-4 p-4 bg-blue-50 border-blue-200 rounded-lg">
+              <div className="mb-4 p-4 bg-muted-teal/10 border border-muted-teal/30 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-                  <span className="text-blue-700">
+                  <div className="animate-spin h-5 w-5 border-2 border-muted-teal border-t-transparent rounded-full"></div>
+                  <span className="text-off-white">
                     {uploadStatus === "uploading" && "Uploading file..."}
                     {uploadStatus === "extracting" && "Extracting metadata..."}
                     {uploadStatus === "success" && "Upload complete!"}

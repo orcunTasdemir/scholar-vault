@@ -58,21 +58,21 @@ export function DocumentCard({
   };
 
   return (
-    <div className=" rounded-lg bg-deep-charcoal/70 text-off-white hover:shadow-md transition-shadow group">
+    <div className="rounded-lg bg-deep-charcoal/80 backdrop-blur-sm text-off-white hover:shadow-lg hover:bg-deep-charcoal/90 transition-all border border-off-white/10 flex flex-col">
       {/* Document Info - Clickable */}
       <div
-        className="p-4 cursor-pointer"
+        className="p-4 cursor-pointer flex-1"
         onClick={() => router.push(`/dashboard/documents/${document.id}`)}
       >
         <div className="flex items-start gap-3">
-          <FileText className="w-5 h-5 shrink-0 text-blue-600 mt-0.5" />
+          <FileText className="w-5 h-5 shrink-0 text-muted-teal mt-0.5" />
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold line-clamp-2 mb-2">
+            <h3 className="font-semibold line-clamp-2 mb-2 min-h-[2.5rem]">
               {document.title}
             </h3>
-            <div className="flex flex-col gap-1 text-xs">
+            <div className="flex flex-col gap-1 text-xs text-off-white/70">
               {document.authors && document.authors.length > 0 && (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 min-h-[1.25rem]">
                   <User className="w-3 h-3 shrink-0" />
                   <span className="truncate">
                     {document.authors[0]}
@@ -95,9 +95,9 @@ export function DocumentCard({
         </div>
       </div>
 
-      {/* Action Buttons - Compact */}
+      {/* Action Buttons - Fixed at bottom */}
       <div
-        className="flex items-center gap-1 p-2"
+        className="flex items-center gap-1 p-2 border-t border-off-white/10 mt-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <Button
@@ -107,7 +107,7 @@ export function DocumentCard({
             e.stopPropagation();
             router.push(`/dashboard/documents/${document.id}`);
           }}
-          className="flex-1"
+          className="flex-1 text-off-white hover:bg-muted-teal/20 hover:text-muted-teal"
         >
           <Eye className="w-4 h-4 mr-1" />
           <span className="hidden sm:inline">View</span>
@@ -122,7 +122,7 @@ export function DocumentCard({
                 e.stopPropagation();
                 setRemoveDialogOpen(true);
               }}
-              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+              className="text-old-paper-yellow hover:text-old-paper-yellow hover:bg-old-paper-yellow/20"
               title="Remove from collection"
             >
               <FolderMinus className="w-4 h-4" />
@@ -134,7 +134,7 @@ export function DocumentCard({
                 e.stopPropagation();
                 setDeleteDialogOpen(true);
               }}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="text-destructive hover:text-destructive hover:bg-destructive/20"
               title="Delete document"
             >
               <Trash2 className="w-4 h-4" />
@@ -148,6 +148,7 @@ export function DocumentCard({
                   size="sm"
                   variant="ghost"
                   onClick={(e) => e.stopPropagation()}
+                  className="text-off-white hover:bg-muted-teal/20 hover:text-muted-teal"
                   title="Add to collection"
                 >
                   <FolderPlus className="w-4 h-4" />
@@ -170,7 +171,7 @@ export function DocumentCard({
                 e.stopPropagation();
                 setDeleteDialogOpen(true);
               }}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="text-destructive hover:text-destructive hover:bg-destructive/20"
               title="Delete document"
             >
               <Trash2 className="w-4 h-4" />

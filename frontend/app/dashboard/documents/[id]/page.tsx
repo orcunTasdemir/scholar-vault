@@ -60,16 +60,21 @@ export default function DocumentDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-deep-charcoal">
+        <div className="text-center">
+          <div className="animate-spin h-12 w-12 border-4 border-muted-teal border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className="text-off-white">Loading document...</div>
+        </div>
       </div>
     );
   }
 
   if (error || !document) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-red-600">{error || "Document not found"}</div>
+      <div className="min-h-screen flex items-center justify-center bg-deep-charcoal">
+        <div className="text-destructive bg-destructive/10 border border-destructive px-6 py-4 rounded-lg">
+          {error || "Document not found"}
+        </div>
       </div>
     );
   }
@@ -112,24 +117,28 @@ export default function DocumentDetailPage() {
   };
 
   return (
-    <div className="min-h-screen ">
-      {/* Header */}
-      <header className=" shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="text-blue-600 hover:text-blue-800 mb-2 flex items-center gap-1"
-          >
-            ← Back to Dashboard
-          </button>
+    <div
+      className="min-h-screen bg-cover bg-center bg-fixed"
+      style={{ backgroundImage: "url('/background.png')" }}
+    >
+      {/* Header - Compact */}
+      <header className="bg-deep-charcoal/90 backdrop-blur-sm border-b border-off-white/10 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="text-muted-teal hover:text-muted-teal/80 flex items-center gap-1 transition-colors text-sm"
+            >
+              ← Back
+            </button>
+            <div className="h-4 w-px bg-off-white/20"></div>
             <Image
               src="/logo.png"
               alt="ScholarVault Logo"
-              width={40}
-              height={40}
+              width={28}
+              height={28}
             />
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-lg font-bold text-off-white font-logo truncate">
               {document.title}
             </h1>
           </div>
@@ -137,112 +146,117 @@ export default function DocumentDetailPage() {
       </header>
 
       {/* Main Content */}
-      <main className="w-screen px-4 sm:px-6 lg:px-8 py-8">
-        <div className="w-full mx-auto rounded-lg shadow p-6 flex flex-row">
-          {/* First Col */}
-          <div className="grow mx-auto max-w-1/2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <main className="w-screen px-4 sm:px-6 lg:px-8 py-4 h-[calc(100vh-4rem)]">
+        <div className="w-full h-full mx-auto rounded-lg bg-deep-charcoal/80 backdrop-blur-sm border border-off-white/10 p-6 flex flex-row gap-6 overflow-hidden">
+          {/* First Col - Metadata */}
+          <div
+            className="mx-auto transition-all duration-700 ease-in-out min-w-0 overflow-y-auto"
+            style={{
+              flex: showChat ? '0 0 calc(33.333% - 16px)' : '1 1 auto',
+            }}
+          >
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${showChat ? "gap-3" : "gap-6"} transition-all duration-700 ease-in-out`}>
               {/* Authors */}
               {document.authors && document.authors.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-teal mb-1">
                     Authors
                   </label>
-                  <p className="text-gray-900">{document.authors.join(", ")}</p>
+                  <p className="text-off-white">{document.authors.join(", ")}</p>
                 </div>
               )}
 
               {/* Year */}
               {document.year && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-teal mb-1">
                     Year
                   </label>
-                  <p className="text-gray-900">{document.year}</p>
+                  <p className="text-off-white">{document.year}</p>
                 </div>
               )}
 
               {/* Publication Type */}
               {document.publication_type && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-teal mb-1">
                     Publication Type
                   </label>
-                  <p className="text-gray-900">{document.publication_type}</p>
+                  <p className="text-off-white">{document.publication_type}</p>
                 </div>
               )}
 
               {/* Journal */}
               {document.journal && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-teal mb-1">
                     Journal
                   </label>
-                  <p className="text-gray-900">{document.journal}</p>
+                  <p className="text-off-white">{document.journal}</p>
                 </div>
               )}
 
               {/* Volume */}
               {document.volume && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-teal mb-1">
                     Volume
                   </label>
-                  <p className="text-gray-900">{document.volume}</p>
+                  <p className="text-off-white">{document.volume}</p>
                 </div>
               )}
 
               {/* Issue */}
               {document.issue && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-teal mb-1">
                     Issue
                   </label>
-                  <p className="text-gray-900">{document.issue}</p>
+                  <p className="text-off-white">{document.issue}</p>
                 </div>
               )}
 
               {/* Pages */}
               {document.pages && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-teal mb-1">
                     Pages
                   </label>
-                  <p className="text-gray-900">{document.pages}</p>
+                  <p className="text-off-white">{document.pages}</p>
                 </div>
               )}
 
               {/* Publisher */}
               {document.publisher && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-teal mb-1">
                     Publisher
                   </label>
-                  <p className="text-gray-900">{document.publisher}</p>
+                  <p className="text-off-white">{document.publisher}</p>
                 </div>
               )}
 
               {/* DOI */}
               {document.doi && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-teal mb-1">
                     DOI
                   </label>
-                  <p className="text-gray-900">{document.doi}</p>
+                  <p className="text-off-white">{document.doi}</p>
                 </div>
               )}
 
               {/* URL */}
               {document.url && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-teal mb-1">
                     URL
                   </label>
                   <a
                     href={document.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 break-all"
+                    className="text-muted-teal hover:text-muted-teal/80 break-all underline"
                   >
                     {document.url}
                   </a>
@@ -253,14 +267,14 @@ export default function DocumentDetailPage() {
             {/* Keywords */}
             {document.keywords && document.keywords.length > 0 && (
               <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-off-white mb-2">
                   Keywords
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {document.keywords.map((keyword, index) => (
                     <span
                       key={index}
-                      className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                      className="px-3 py-1 bg-muted-teal/30 text-off-white border border-muted-teal/50 rounded-full text-sm font-medium"
                     >
                       {keyword}
                     </span>
@@ -269,25 +283,34 @@ export default function DocumentDetailPage() {
               </div>
             )}
 
-            {/* Abstract */}
-            {document.abstract_text && (
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Abstract
-                </label>
-                <p className="text-gray-900 whitespace-pre-wrap">
-                  {document.abstract_text}
-                </p>
-              </div>
-            )}
+            {/* Abstract - Hidden when chat is active */}
+            <div
+              className="mt-6 overflow-hidden transition-all duration-700 ease-in-out"
+              style={{
+                maxHeight: showChat ? '0px' : '2000px',
+                opacity: showChat ? 0 : 1,
+                marginTop: showChat ? '0px' : '24px',
+              }}
+            >
+              {document.abstract_text && (
+                <>
+                  <label className="block text-sm font-medium text-muted-teal mb-2">
+                    Abstract
+                  </label>
+                  <p className="text-off-white/90 whitespace-pre-wrap leading-relaxed">
+                    {document.abstract_text}
+                  </p>
+                </>
+              )}
+            </div>
 
             {/* Action Buttons */}
-            <div className="mt-6 flex gap-4">
+            <div className="mt-8 flex flex-wrap gap-3">
               <button
                 onClick={() =>
                   router.push(`/dashboard/documents/${documentId}/edit`)
                 }
-                className="inline-block px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                className="px-6 py-2.5 bg-muted-teal hover:bg-muted-teal/90 text-off-white font-semibold rounded-lg transition-colors"
               >
                 Edit Document
               </button>
@@ -297,14 +320,14 @@ export default function DocumentDetailPage() {
                 <>
                   <button
                     onClick={() => setShowPDF(!showPDF)}
-                    className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="px-6 py-2.5 bg-muted-teal/20 hover:bg-muted-teal/30 text-off-white border border-muted-teal/30 font-semibold rounded-lg transition-colors"
                   >
                     {showPDF ? "Hide PDF" : "Show PDF"}
                   </button>
 
                   <button
                     onClick={() => setShowChat(!showChat)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-old-paper-yellow/20 hover:bg-old-paper-yellow/30 text-old-paper-yellow border border-old-paper-yellow/30 font-semibold rounded-lg transition-colors"
                   >
                     <MessageSquare className="h-4 w-4" />
                     {showChat ? "Hide Chat" : "Chat with Document"}
@@ -313,7 +336,7 @@ export default function DocumentDetailPage() {
                   <a
                     href={`${API_BASE_URL}/${document.pdf_url}`}
                     download
-                    className="inline-block px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                    className="inline-block px-6 py-2.5 bg-off-white/10 hover:bg-off-white/20 text-off-white border border-off-white/20 font-semibold rounded-lg transition-colors"
                   >
                     Download PDF
                   </a>
@@ -321,39 +344,35 @@ export default function DocumentDetailPage() {
               )}
             </div>
           </div>
-          {/* Second Col */}
-          <div className="grow max-w-1/2">
-            {/* PDF Viewer */}
-            {document.pdf_url && showPDF && (
-              <div>
-                <iframe
-                  src={`${API_BASE_URL}/${document.pdf_url}`}
-                  className="w-full h-[800px] border border-gray-300 rounded-md"
-                  title="PDF Viewer"
-                />
-              </div>
-            )}
 
-            {/* Chat Interface */}
-            {document.pdf_url && showChat && (
-              <div className="border border-gray-300 rounded-lg overflow-hidden">
-                <div className="bg-purple-50 px-4 py-3 border-b border-gray-300">
-                  <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5" />
+          {/* Second Col - Chat (always in DOM, visibility controlled) */}
+          {document.pdf_url && (
+            <div
+              className="transition-all duration-700 ease-in-out overflow-hidden min-w-0"
+              style={{
+                flex: showChat ? '0 0 calc(33.333% - 16px)' : '0 0 0px',
+                opacity: showChat ? 1 : 0,
+                transform: showChat ? 'translateX(0)' : 'translateX(-20px)',
+              }}
+            >
+              <div className="border border-off-white/20 rounded-lg overflow-hidden bg-deep-charcoal/50 flex flex-col h-full">
+                <div className="bg-old-paper-yellow/20 px-4 py-3 border-b border-old-paper-yellow/30">
+                  <h3 className="font-semibold text-off-white flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-old-paper-yellow" />
                     Chat with Document
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-off-white/70 mt-1">
                     Ask questions about this paper and get answers from an AI
                     that has read it.
                   </p>
                 </div>
 
                 {/* Messages */}
-                <div className="h-[400px] overflow-y-auto p-4 space-y-4 bg-white">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   {messages.length === 0 ? (
-                    <div className="text-center text-gray-500 mt-20">
-                      <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                      <p className="font-medium">Start a conversation</p>
+                    <div className="text-center text-off-white/60 mt-20">
+                      <MessageSquare className="h-12 w-12 mx-auto mb-3 text-old-paper-yellow/50" />
+                      <p className="font-medium text-off-white">Start a conversation</p>
                       <p className="text-sm mt-1">
                         Ask questions about the paper&apos;s methodology,
                         findings, or implications
@@ -370,8 +389,8 @@ export default function DocumentDetailPage() {
                         <div
                           className={`max-w-[80%] rounded-lg px-4 py-2 ${
                             msg.role === "user"
-                              ? "bg-purple-600 text-white"
-                              : "bg-gray-100 text-gray-900"
+                              ? "bg-old-paper-yellow/90 text-deep-charcoal"
+                              : "bg-off-white/10 text-off-white border border-off-white/20"
                           }`}
                         >
                           <p className="text-sm whitespace-pre-wrap">
@@ -383,15 +402,15 @@ export default function DocumentDetailPage() {
                   )}
                   {isSending && (
                     <div className="flex justify-start">
-                      <div className="max-w-[80%] rounded-lg px-4 py-2 bg-gray-100">
-                        <p className="text-sm text-gray-500">Thinking...</p>
+                      <div className="max-w-[80%] rounded-lg px-4 py-2 bg-off-white/10 border border-off-white/20">
+                        <p className="text-sm text-off-white/70">Thinking...</p>
                       </div>
                     </div>
                   )}
                 </div>
 
                 {/* Input */}
-                <div className="border-t border-gray-300 p-4 bg-gray-50">
+                <div className="border-t border-off-white/20 p-4 bg-deep-charcoal/30">
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -400,24 +419,44 @@ export default function DocumentDetailPage() {
                       onKeyPress={handleKeyPress}
                       placeholder="Ask a question about this paper..."
                       disabled={isSending}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100"
+                      className="flex-1 px-4 py-2 border border-off-white/20 bg-deep-charcoal/50 text-off-white placeholder:text-off-white/40 rounded-md focus:outline-none focus:ring-2 focus:ring-old-paper-yellow/50 focus:border-old-paper-yellow/50 disabled:opacity-50"
                     />
                     <button
                       onClick={handleSendMessage}
                       disabled={!chatInput.trim() || isSending}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                      className="px-4 py-2 bg-old-paper-yellow hover:bg-old-paper-yellow/90 text-deep-charcoal font-semibold rounded-md disabled:bg-off-white/20 disabled:text-off-white/40 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
                     >
                       <Send className="h-4 w-4" />
                       Send
                     </button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-off-white/50 mt-2">
                     Press Enter to send, Shift+Enter for new line
                   </p>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Third Col - PDF Viewer (always in DOM when PDF exists) */}
+          {document.pdf_url && (
+            <div
+              className="transition-all duration-700 ease-in-out min-w-0 overflow-hidden"
+              style={{
+                flex: showPDF
+                  ? (showChat ? '0 0 calc(33.333% - 16px)' : '1 1 auto')
+                  : '0 0 0px',
+                opacity: showPDF ? 1 : 0,
+                transform: showPDF ? 'translateX(0)' : 'translateX(20px)',
+              }}
+            >
+              <iframe
+                src={`${API_BASE_URL}/${document.pdf_url}`}
+                className="w-full h-full border border-off-white/20 rounded-lg bg-white"
+                title="PDF Viewer"
+              />
+            </div>
+          )}
         </div>
       </main>
     </div>

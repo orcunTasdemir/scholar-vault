@@ -5,8 +5,14 @@ export interface User {
     email: string;
     username: string | null;
     profile_image_url: string | null;
+    subscription_tier: string;
+    subscription_status: string;
+    stripe_customer_id: string | null;
+    stripe_subscription_id: string | null;
+    subscription_start_date: string | null;
+    subscription_end_date: string | null;
+    trial_end_date: string | null;
 }
-
 export interface LoginResponse {
     token: string;
     user: User;
@@ -41,6 +47,25 @@ export interface Collection {
     parent_id: string | null;
     created_at: string;
     updated_at: string;
+}
+
+
+export interface SubscriptionInfo {
+    tier: 'student' | 'researcher' | 'academic' | 'scholar';
+    status: 'active' | 'canceled' | 'past_due' | 'trialing' | 'incomplete';
+    trial_end_date: string | null;
+    subscription_end_date: string | null;
+    is_trial_active: boolean;
+}
+
+export interface CreateCheckoutSessionRequest {
+    tier: 'student' | 'researcher' | 'academic' | 'scholar';
+    billing_period: 'monthly' | 'yearly';
+}
+
+export interface CheckoutSessionResponse {
+    checkout_url: string;
+    session_id: string;
 }
 
 class ApiClient {
@@ -316,6 +341,43 @@ class ApiClient {
 
         if (!response.ok) {
             throw new Error('Failed to remove document from collection');
+        }
+    }
+    // Get subscription information
+    async getSubscriptionInfo(token: string): Promise<SubscriptionInfo> {
+        const response = await fetch(`${API_BASE_URL}/api/subscriptions/info`, {
+            headers: this.getHeaders(token),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to fetch subscription info');
+        }
+        return response.json();
+    }
+
+    // Create Stripe checkout session
+    async createCheckoutSession(
+        token: string,
+        request: CreateCheckoutSessionRequest
+    ): Promise<CheckoutSessionResponse> {
+        const response = await fetch(`${API_BASE_URL}/api/subscriptions/checkout`, {
+            method: 'POST',
+            headers: this.getHeaders(token),
+            body: JSON.stringify(request),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to create checkout session');
+        }
+        return response.json();
+    }
+
+    // Cancel subscription
+    async cancelSubscription(token: string): Promise<void> {
+        const response = await fetch(`${API_BASE_URL}/api/subscriptions/cancel`, {
+            method: 'POST',
+            headers: this.getHeaders(token),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to cancel subscription');
         }
     }
 }

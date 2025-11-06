@@ -58,5 +58,9 @@ pub fn create_routes(state: AppState) -> Router {
             "/api/subscriptions/cancel",
             post(subscription_handlers::cancel_subscription),
         )
+        .route(
+            "/api/webhooks/stripe",
+            post(subscription_handlers::handle_stripe_webhook),
+        )
         .with_state(state)
 }

@@ -128,6 +128,11 @@ export function AppHeader({
               >
                 Profile Settings
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => router.push("/dashboard/subscription")}
+              >
+                Subscription & Billing
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={onLogout}

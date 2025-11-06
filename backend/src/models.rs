@@ -145,7 +145,8 @@ pub struct UpdateCollection {
 }
 
 //Subscription Models
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, sqlx::Type)]
+#[serde(rename_all = "lowercase")]
 #[sqlx(type_name = "VARCHAR", rename_all = "lowercase")]
 pub enum SubscriptionTier {
     Student,

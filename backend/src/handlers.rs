@@ -54,7 +54,9 @@ pub async fn register_user(
         r#"
         INSERT INTO users (email, password_hash, username)
         VALUES ($1, $2, $3)
-        RETURNING id, email, username, profile_image_url, created_at
+        RETURNING id, email, username, profile_image_url, created_at,
+                  subscription_tier, subscription_status, stripe_customer_id, stripe_subscription_id,
+                  subscription_start_date, subscription_end_date, trial_end_date
         "#,
         payload.email,
         password_hash,
@@ -106,7 +108,9 @@ pub async fn login_user(
     // Find user
     let user = sqlx::query!(
         r#"
-        SELECT id, email, password_hash, username, profile_image_url, created_at, updated_at
+        SELECT id, email, password_hash, username, profile_image_url, created_at, updated_at,
+               subscription_tier, subscription_status, stripe_customer_id, stripe_subscription_id,
+               subscription_start_date, subscription_end_date, trial_end_date
         FROM users
         WHERE email = $1
         "#,
@@ -178,7 +182,10 @@ pub async fn get_current_user(
 
     let user = sqlx::query_as!(
         User,
-        r#"SELECT id, email, password_hash, username, profile_image_url, created_at, updated_at FROM users WHERE id = $1"#,
+        r#"SELECT id, email, password_hash, username, profile_image_url, created_at, updated_at,
+           subscription_tier, subscription_status, stripe_customer_id, stripe_subscription_id,
+           subscription_start_date, subscription_end_date, trial_end_date
+           FROM users WHERE id = $1"#,
         user_id
     )
     .fetch_one(&state.db)
@@ -660,7 +667,10 @@ pub async fn upload_profile_image(
     // Delete old profile image if it exists
     let old_user = sqlx::query_as!(
         User,
-        r#"SELECT id, email, password_hash, username, profile_image_url, created_at, updated_at FROM users WHERE id = $1"#,
+        r#"SELECT id, email, password_hash, username, profile_image_url, created_at, updated_at,
+           subscription_tier, subscription_status, stripe_customer_id, stripe_subscription_id,
+           subscription_start_date, subscription_end_date, trial_end_date
+           FROM users WHERE id = $1"#,
         user_id
     )
     .fetch_one(&state.db)
@@ -695,7 +705,9 @@ pub async fn upload_profile_image(
     // Update user's profile_image_url in database
     let updated_user = sqlx::query_as!(
         User,
-        r#"UPDATE users SET profile_image_url = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, password_hash, username, profile_image_url, created_at, updated_at"#,
+        r#"UPDATE users SET profile_image_url = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, password_hash, username, profile_image_url, created_at, updated_at,
+           subscription_tier, subscription_status, stripe_customer_id, stripe_subscription_id,
+           subscription_start_date, subscription_end_date, trial_end_date"#,
         upload_path,
         user_id
     )
@@ -731,7 +743,10 @@ pub async fn delete_profile_image(
     // Get current user to find their profile image
     let user = sqlx::query_as!(
         User,
-        r#"SELECT id, email, password_hash, username, profile_image_url, created_at, updated_at FROM users WHERE id = $1"#,
+        r#"SELECT id, email, password_hash, username, profile_image_url, created_at, updated_at,
+           subscription_tier, subscription_status, stripe_customer_id, stripe_subscription_id,
+           subscription_start_date, subscription_end_date, trial_end_date
+           FROM users WHERE id = $1"#,
         user_id
     )
     .fetch_one(&state.db)
@@ -752,7 +767,9 @@ pub async fn delete_profile_image(
     // Update database to set profile_image_url to NULL
     let updated_user = sqlx::query_as!(
         User,
-        r#"UPDATE users SET profile_image_url = NULL, updated_at = NOW() WHERE id = $1 RETURNING id, email, password_hash, username, profile_image_url, created_at, updated_at"#,
+        r#"UPDATE users SET profile_image_url = NULL, updated_at = NOW() WHERE id = $1 RETURNING id, email, password_hash, username, profile_image_url, created_at, updated_at,
+           subscription_tier, subscription_status, stripe_customer_id, stripe_subscription_id,
+           subscription_start_date, subscription_end_date, trial_end_date"#,
         user_id
     )
     .fetch_one(&state.db)
@@ -788,7 +805,9 @@ pub async fn update_profile(
     // Update username in database
     let updated_user = sqlx::query_as!(
         User,
-        r#"UPDATE users SET username = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, password_hash, username, profile_image_url, created_at, updated_at"#,
+        r#"UPDATE users SET username = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, password_hash, username, profile_image_url, created_at, updated_at,
+           subscription_tier, subscription_status, stripe_customer_id, stripe_subscription_id,
+           subscription_start_date, subscription_end_date, trial_end_date"#,
         payload.username,
         user_id
     )

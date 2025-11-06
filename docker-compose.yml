@@ -25,10 +25,16 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/scholarvault
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
     ports:
       - "3000:3000"
     volumes:
       - ./backend/uploads:/app/uploads
+      - cargo-cache:/usr/local/cargo/registry
+      - cargo-git-cache:/usr/local/cargo/git
+      - target-cache:/app/target
     depends_on:
       postgres:
         condition: service_healthy
@@ -50,3 +56,6 @@ services:
 
 volumes:
   postgres_data:
+  cargo-cache:
+  cargo-git-cache:
+  target-cache:

@@ -129,6 +129,19 @@ export default function DashboardPage() {
     fetchCollectionDocuments();
   }, [selectedCollectionId, token]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("success") === "true") {
+      toast.success("Subscription activated! Welcome aboard.");
+      // Clear the parameter
+      window.history.replaceState({}, "", "/dashboard");
+    }
+    if (params.get("canceled") === "true") {
+      toast.info("Checkout cancelled. You can subscribe anytime.");
+      window.history.replaceState({}, "", "/dashboard");
+    }
+  }, []);
+
   if (!user) {
     return null;
   }

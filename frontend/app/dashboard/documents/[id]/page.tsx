@@ -1,8 +1,8 @@
 "use client";
 
 import { toast } from "sonner";
-import { Send, MessageSquare } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Send, MessageSquare, Copy, ChevronDown } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, Document } from "@/lib/api";
@@ -26,6 +26,11 @@ export default function DocumentDetailPage() {
   >([]);
   const [chatInput, setChatInput] = useState("");
   const [isSending, setIsSending] = useState(false);
+
+  const [citationFormat, setCitationFormat] = useState<
+    "APA" | "MLA" | "Chicago" | "IEEE" | "BibTeX"
+  >("APA");
+  const [generatedCitation, setGeneratedCitation] = useState("");
 
   const documentId = params.id as string;
 
@@ -57,6 +62,96 @@ export default function DocumentDetailPage() {
     };
     fetchDocument();
   }, [token, documentId]);
+
+  const generateCitation = useCallback(
+    (format: typeof citationFormat): string => {
+      if (!document) return "";
+
+      const authors = document.authors?.join(", ") || "Unknown Author";
+      const year = document.year || "n.d.";
+      const title = document.title;
+      const journal = document.journal || "";
+      const volume = document.volume || "";
+      const issue = document.issue || "";
+      const pages = document.pages || "";
+      const doi = document.doi || "";
+      const url = document.url || "";
+
+      switch (format) {
+        case "APA":
+          // Author(s). (Year). Title. Journal, Volume(Issue), pages. DOI
+          let apa = `${authors}. (${year}). ${title}.`;
+          if (journal) apa += ` ${journal}`;
+          if (volume) apa += `, ${volume}`;
+          if (issue) apa += `(${issue})`;
+          if (pages) apa += `, ${pages}`;
+          if (doi) apa += `. https://doi.org/${doi}`;
+          return apa;
+
+        case "MLA":
+          // Author(s). "Title." Journal, vol. X, no. X, Year, pp. pages.
+          let mla = `${authors}. "${title}."`;
+          if (journal) mla += ` ${journal}`;
+          if (volume) mla += `, vol. ${volume}`;
+          if (issue) mla += `, no. ${issue}`;
+          mla += `, ${year}`;
+          if (pages) mla += `, pp. ${pages}`;
+          mla += `.`;
+          return mla;
+
+        case "Chicago":
+          // Author(s). "Title." Journal Volume, no. Issue (Year): pages.
+          let chicago = `${authors}. "${title}."`;
+          if (journal) chicago += ` ${journal}`;
+          if (volume) chicago += ` ${volume}`;
+          if (issue) chicago += `, no. ${issue}`;
+          chicago += ` (${year})`;
+          if (pages) chicago += `: ${pages}`;
+          chicago += `.`;
+          return chicago;
+
+        case "IEEE":
+          // Author(s), "Title," Journal, vol. X, no. X, pp. pages, Year.
+          let ieee = `${authors}, "${title},"`;
+          if (journal) ieee += ` ${journal}`;
+          if (volume) ieee += `, vol. ${volume}`;
+          if (issue) ieee += `, no. ${issue}`;
+          if (pages) ieee += `, pp. ${pages}`;
+          ieee += `, ${year}.`;
+          return ieee;
+
+        case "BibTeX":
+          // BibTeX format
+          const firstAuthor =
+            document.authors?.[0]?.split(" ").pop()?.toLowerCase() || "unknown";
+          const bibKey = `${firstAuthor}${year}${title
+            .split(" ")[0]
+            .toLowerCase()}`;
+          let bibtex = `@article{${bibKey},\n`;
+          bibtex += `  author = {${authors}},\n`;
+          bibtex += `  title = {${title}},\n`;
+          if (journal) bibtex += `  journal = {${journal}},\n`;
+          if (volume) bibtex += `  volume = {${volume}},\n`;
+          if (issue) bibtex += `  number = {${issue}},\n`;
+          if (pages) bibtex += `  pages = {${pages}},\n`;
+          bibtex += `  year = {${year}}`;
+          if (doi) bibtex += `,\n  doi = {${doi}}`;
+          if (url) bibtex += `,\n  url = {${url}}`;
+          bibtex += `\n}`;
+          return bibtex;
+
+        default:
+          return "";
+      }
+    },
+    [document]
+  );
+
+  useEffect(() => {
+    if (document) {
+      setGeneratedCitation(generateCitation(citationFormat));
+    }
+  }, [citationFormat, document, generateCitation]);
 
   if (isLoading) {
     return (
@@ -114,6 +209,11 @@ export default function DocumentDetailPage() {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleCopyCitation = () => {
+    navigator.clipboard.writeText(generatedCitation);
+    toast.success("Citation copied to clipboard!");
   };
 
   return (
@@ -351,6 +451,45 @@ export default function DocumentDetailPage() {
                     Download PDF
                   </a>
                 </>
+              )}
+            </div>
+            {/* Citation Exporter */}
+            <div className="mt-6 space-y-3">
+              <label className="block text-sm font-medium text-muted-teal">
+                Export Citation
+              </label>
+
+              {/* Format Dropdown */}
+              <div className="flex gap-2">
+                <select
+                  value={citationFormat}
+                  onChange={(e) =>
+                    setCitationFormat(e.target.value as typeof citationFormat)
+                  }
+                  className="flex-1 px-4 py-2 bg-deep-charcoal/50 border border-off-white/20 text-off-white rounded-lg focus:outline-none focus:ring-2 focus:ring-muted-teal/50 focus:border-muted-teal/50"
+                >
+                  <option value="APA">APA (7th Edition)</option>
+                  <option value="MLA">MLA (9th Edition)</option>
+                  <option value="Chicago">Chicago (Author-Date)</option>
+                  <option value="IEEE">IEEE</option>
+                  <option value="BibTeX">BibTeX</option>
+                </select>
+              </div>
+
+              {/* Citation Display Box */}
+              {generatedCitation && (
+                <div className="relative">
+                  <div className="p-4 bg-off-white/5 border border-off-white/20 rounded-lg text-off-white text-sm font-mono whitespace-pre-wrap break-words">
+                    {generatedCitation}
+                  </div>
+                  <button
+                    onClick={handleCopyCitation}
+                    className="absolute top-2 right-2 p-2 bg-muted-teal hover:bg-muted-teal/90 text-off-white rounded-md transition-colors"
+                    title="Copy to clipboard"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </div>
               )}
             </div>
           </div>

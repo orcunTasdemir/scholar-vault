@@ -34,7 +34,12 @@ export default function DashboardPage() {
   const { user, token, isLoading: authLoading, logout } = useAuth();
 
   // Custom hooks
-  const { documents, isLoading, setDocuments, deleteDocument: deleteDoc } = useDocuments(token, user);
+  const {
+    documents,
+    isLoading,
+    setDocuments,
+    deleteDocument: deleteDoc,
+  } = useDocuments(token, user);
   const {
     collections,
     selectedCollectionId,

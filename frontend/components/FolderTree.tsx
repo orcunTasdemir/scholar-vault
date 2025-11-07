@@ -51,7 +51,7 @@ export function FolderTree({
     return (
       <div key={collection.id} className="flex flex-col text-off-white">
         <div
-          className={`flex items-center gap-2 py-2 px-3 cursor-pointer hover:bg-muted-teal/10 ${
+          className={`flex items-center gap-2 py-1 px-3 cursor-pointer hover:bg-muted-teal/10 ${
             isSelected ? "bg-muted-teal/20 border-l-4 border-muted-teal" : ""
           }`}
           style={{
@@ -86,7 +86,7 @@ export function FolderTree({
               e.stopPropagation();
               onRenameFolder(collection.id);
             }}
-            className="shrink-0  hover:text-old-paper-yellow p-1"
+            className="shrink-0  hover:text-old-paper-yellow/60 hover:bg-old-paper-yellow/20 p-2 rounded-md"
             title="Rename"
           >
             <Pencil className="w-4 h-4" />
@@ -96,7 +96,7 @@ export function FolderTree({
               e.stopPropagation();
               onDeleteFolder(collection.id);
             }}
-            className="shrink-0 hover:text-red-600/60 p-1"
+            className="shrink-0 hover:text-destructive hover:bg-destructive/20 p-2 rounded-md"
             title="Delete"
           >
             <BookX className="w-4 h-4" />
@@ -122,13 +122,14 @@ export function FolderTree({
         onClick={() => onSelectCollection(null)}
       >
         <div className="flex items-center gap-2">
-          <Landmark className="w-4 h-4 shrink-0" />
-          <span className="text-sm font-medium py-2">All Documents</span>
+          <Landmark className="w-4 h-4 shrink-0 scale-150" />
+          <span className="text-lg font-medium py-1">All Documents</span>
         </div>
       </div>
-      <div className="py-3">
-        <span className="text-xl">Collections</span>
+      <div className="pt-3 pb-1 border-b border-b-old-paper-yellow/80">
+        <span className="text-lg">Collections</span>
       </div>
+      <div className="pb-2"></div>
 
       {rootFolders.map((folder) => renderFolder(folder))}
     </div>

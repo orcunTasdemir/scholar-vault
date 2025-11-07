@@ -8,6 +8,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api, Document } from "@/lib/api";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://10.0.0.53:3000";
 
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 import DocumentHeader from "@/components/layout/DocumentHeader";
 
 export default function DocumentDetailPage() {
@@ -224,7 +234,7 @@ export default function DocumentDetailPage() {
       />
 
       {/* Main Content */}
-      <main className="w-screen px-2 sm:px-2 lg:px-2 py-2 h-[calc(100vh-3rem)]">
+      <main className="w-screen px-2 sm:px-2 lg:px-2 py-2 h-[calc(100vh-4rem)]">
         <div className="w-full h-full mx-auto rounded-lg bg-deep-charcoal/80 backdrop-blur-sm border border-off-white/10 p-6 flex flex-row gap-6 overflow-hidden">
           {/* Metadata Panel - Responsive Layout */}
           <div
@@ -546,7 +556,43 @@ export default function DocumentDetailPage() {
                     Export Citation
                   </label>
 
-                  <select
+                  <Select
+                    value={citationFormat}
+                    onValueChange={(value) =>
+                      setCitationFormat(value as typeof citationFormat)
+                    }
+                  >
+                    <SelectTrigger className="w-[180px] text-old-paper-yellow">
+                      <SelectValue placeholder="Select a Citation Style" />
+                    </SelectTrigger>
+                    <SelectContent
+                      className={`w-full px-4 py-2.5 bg-deep-charcoal/90 border border-old-paper-yellow/30 text-old-paper-yellow rounded-lg focus:outline-none focus:ring-2 focus:ring-old-paper-yellow/50 transition-colors ${
+                        isExpanded ? "text-base" : "text-sm"
+                      }`}
+                    >
+                      <SelectGroup>
+                        {["APA", "MLA", "Chicago", "IEEE", "BibTeX"].map(
+                          (style) => (
+                            <SelectItem
+                              key={style}
+                              value={style}
+                              className="hover:bg-deep-charcoal/70 hover:text-old-paper-yellow data-highlighted:bg-off-white/10 data-highlighted:text-old-paper-yellow"
+                            >
+                              {style === "Chicago"
+                                ? "Chicago (Author-Date)"
+                                : style === "APA"
+                                ? "APA (7th Edition)"
+                                : style === "MLA"
+                                ? "MLA (9th Edition)"
+                                : style}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+
+                  {/* <select
                     value={citationFormat}
                     onChange={(e) =>
                       setCitationFormat(e.target.value as typeof citationFormat)
@@ -560,7 +606,7 @@ export default function DocumentDetailPage() {
                     <option value="Chicago">Chicago (Author-Date)</option>
                     <option value="IEEE">IEEE</option>
                     <option value="BibTeX">BibTeX</option>
-                  </select>
+                  </select> */}
 
                   {generatedCitation && (
                     <div className="relative">

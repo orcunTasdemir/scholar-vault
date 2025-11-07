@@ -50,27 +50,35 @@ export default function AppHeader({
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Determine the actual search scope (reset to collection when collection changes)
-  const effectiveSearchInAllDocs = selectedCollectionId ? searchInAllDocs : false;
+  const effectiveSearchInAllDocs = selectedCollectionId
+    ? searchInAllDocs
+    : false;
 
   // Effect to trigger search when debounced value changes
   useEffect(() => {
     const collectionId = effectiveSearchInAllDocs ? null : selectedCollectionId;
-    console.log('[AppHeader] Calling onSearch with:', {
+    console.log("[AppHeader] Calling onSearch with:", {
       query: debouncedSearchQuery,
       collectionId,
       effectiveSearchInAllDocs,
       selectedCollectionId,
-      searchInAllDocs
+      searchInAllDocs,
     });
     onSearch(debouncedSearchQuery, collectionId);
-  }, [debouncedSearchQuery, onSearch, selectedCollectionId, effectiveSearchInAllDocs, searchInAllDocs]);
+  }, [
+    debouncedSearchQuery,
+    onSearch,
+    selectedCollectionId,
+    effectiveSearchInAllDocs,
+    searchInAllDocs,
+  ]);
 
   return (
     <header className="text-off-white/80 sticky top-0 z-50 w-full border-none h-16 shrink-0 bg-deep-charcoal">
       <div className="flex h-full items-center gap-4 px-6 w-full max-w-full">
         {/* LEFT: Sidebar Toggle + Logo */}
         <div className="flex basis-1/3 items-center gap-3">
-          <SidebarTrigger />
+          <SidebarTrigger className="scale-120" />
           <div
             className="flex items-center gap-2 cursor-pointer"
             onClick={() => router.push("/dashboard")}
@@ -90,7 +98,7 @@ export default function AppHeader({
               type="text"
               placeholder={
                 selectedCollectionId && !effectiveSearchInAllDocs
-                  ? `Search in ${selectedCollectionName || 'collection'}...`
+                  ? `Search in ${selectedCollectionName || "collection"}...`
                   : "Search all documents..."
               }
               value={searchQuery}
@@ -116,11 +124,13 @@ export default function AppHeader({
               >
                 {effectiveSearchInAllDocs ? (
                   <>
-                    <span className="text-muted-teal">✓</span> Searching all documents
+                    <span className="text-muted-teal">✓</span> Searching all
+                    documents
                   </>
                 ) : (
                   <>
-                    <span className="text-old-paper-yellow">◉</span> Searching in &quot;{selectedCollectionName}&quot;
+                    <span className="text-old-paper-yellow">◉</span> Searching
+                    in &quot;{selectedCollectionName}&quot;
                   </>
                 )}
               </button>
@@ -129,7 +139,9 @@ export default function AppHeader({
                 onClick={() => setSearchInAllDocs(!searchInAllDocs)}
                 className="text-xs text-muted-teal hover:text-muted-teal/80 transition-colors"
               >
-                {effectiveSearchInAllDocs ? `Search in "${selectedCollectionName}"` : "Search all"}
+                {effectiveSearchInAllDocs
+                  ? `Search in "${selectedCollectionName}"`
+                  : "Search all"}
               </button>
             </div>
           )}
@@ -141,7 +153,7 @@ export default function AppHeader({
           <Button
             onClick={onUploadClick}
             size="sm"
-            className="gap-2 px-8 py-4 bg-muted-teal hover:bg-muted-teal/90 text-off-white font-bold rounded-lg"
+            className="gap-2 px-8 py-4 bg-muted-teal hover:bg-off-white text-off-white font-bold rounded-lg hover:text-muted-teal"
             aria-label="Upload document"
           >
             <Upload className="h-4 w-4" />
@@ -150,7 +162,7 @@ export default function AppHeader({
           {/* New Collection Button */}
           <Button
             size="sm"
-            className="gap-2 px-8 py-4 bg-muted-teal hover:bg-muted-teal/90 text-off-white font-bold rounded-lg"
+            className="gap-2 px-8 py-4 bg-muted-teal hover:bg-off-white text-off-white font-bold rounded-lg hover:text-muted-teal"
             onClick={onCreateFolder}
             aria-label="Create new collection"
           >
@@ -161,7 +173,10 @@ export default function AppHeader({
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="relative rounded-full p-0.5 bg-gray-100 border-none" aria-label="Open user menu">
+              <button
+                className="relative rounded-full p-0.5 hover:bg-gray-100 border-none bg-muted-teal"
+                aria-label="Open user menu"
+              >
                 {user.profile_image_url ? (
                   <Image
                     src={`${API_BASE_URL}/${user.profile_image_url}`}

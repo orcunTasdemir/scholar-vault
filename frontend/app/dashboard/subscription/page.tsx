@@ -106,18 +106,18 @@ export default function SubscriptionPage() {
         "Unlimited collections",
       ],
     },
-    {
-      name: "Scholar",
-      id: "scholar",
-      monthlyPrice: null,
-      yearlyPrice: null,
-      features: [
-        "Unlimited documents",
-        "Unlimited chats",
-        "Priority support",
-        "Custom integrations",
-      ],
-    },
+    // {
+    //   name: "Scholar",
+    //   id: "scholar",
+    //   monthlyPrice: null,
+    //   yearlyPrice: null,
+    //   features: [
+    //     "Unlimited documents",
+    //     "Unlimited chats",
+    //     "Priority support",
+    //     "Custom integrations",
+    //   ],
+    // },
   ];
 
   // Render tier cards, billing toggle, cancel button, etc.
@@ -133,169 +133,178 @@ export default function SubscriptionPage() {
       />
       <div className="max-w-7xl mx-auto p-6">
         <div className="bg-deep-charcoal/50 backdrop-blur-md rounded-lg p-8 border border-off-white/10">
-        {/* Current Subscription Status */}
-        {subscriptionInfo && (
-          <div className="mb-8 p-6 bg-deep-charcoal/80 backdrop-blur-sm rounded-lg border border-muted-teal/30">
-            <h2 className="text-2xl font-bold text-old-paper-yellow mb-4">
-              Current Subscription
-            </h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-old-paper-yellow/70">Tier</p>
-                <p className="text-lg font-semibold text-muted-teal capitalize">
-                  {subscriptionInfo.tier}
-                </p>
+          {/* Current Subscription Status */}
+          {subscriptionInfo && (
+            <div className="mb-8 p-6 bg-deep-charcoal/80 backdrop-blur-sm rounded-lg border border-muted-teal/30">
+              <h2 className="text-2xl font-bold text-off-white/100 mb-4 border-b border-b-old-paper-yellow/50">
+                Current Subscription
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-old-paper-yellow/70">Tier</p>
+                  <p className="text-lg font-semibold text-muted-teal capitalize">
+                    {subscriptionInfo.tier}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-old-paper-yellow/70">Status</p>
+                  <p className="text-lg font-semibold text-off-white capitalize">
+                    {subscriptionInfo.status}
+                  </p>
+                </div>
+                {subscriptionInfo.is_trial_active &&
+                  subscriptionInfo.trial_end_date && (
+                    <div className="col-span-2">
+                      <p className="text-sm text-old-paper-yellow/70">
+                        Trial Ends
+                      </p>
+                      <p className="text-lg font-semibold text-old-paper-yellow">
+                        {new Date(
+                          subscriptionInfo.trial_end_date
+                        ).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
               </div>
-              <div>
-                <p className="text-sm text-old-paper-yellow/70">Status</p>
-                <p className="text-lg font-semibold text-off-white capitalize">
-                  {subscriptionInfo.status}
-                </p>
-              </div>
-              {subscriptionInfo.is_trial_active &&
-                subscriptionInfo.trial_end_date && (
-                  <div className="col-span-2">
-                    <p className="text-sm text-old-paper-yellow/70">Trial Ends</p>
-                    <p className="text-lg font-semibold text-old-paper-yellow">
-                      {new Date(
-                        subscriptionInfo.trial_end_date
-                      ).toLocaleDateString()}
-                    </p>
-                  </div>
+              {subscriptionInfo.tier !== "student" &&
+                subscriptionInfo.status === "active" && (
+                  <button
+                    onClick={handleCancel}
+                    disabled={loading}
+                    className="mt-4 px-4 py-2 bg-destructive hover:bg-destructive/90 text-off-white rounded-lg disabled:opacity-50 transition-colors"
+                  >
+                    Cancel Subscription
+                  </button>
                 )}
             </div>
-            {subscriptionInfo.tier !== "student" &&
-              subscriptionInfo.status === "active" && (
-                <button
-                  onClick={handleCancel}
-                  disabled={loading}
-                  className="mt-4 px-4 py-2 bg-destructive hover:bg-destructive/90 text-off-white rounded-lg disabled:opacity-50 transition-colors"
-                >
-                  Cancel Subscription
-                </button>
-              )}
-          </div>
-        )}
+          )}
 
-        {/* Billing Period Toggle */}
-        <div className="flex justify-center mb-8">
-          <div className="inline-flex bg-deep-charcoal/80 backdrop-blur-sm rounded-lg p-1 border border-muted-teal/30">
-            <button
-              onClick={() => setBillingPeriod("monthly")}
-              className={`px-6 py-2 rounded-md transition-colors font-medium ${
-                billingPeriod === "monthly"
-                  ? "bg-muted-teal text-off-white"
-                  : "text-off-white/70 hover:text-off-white"
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingPeriod("yearly")}
-              className={`px-6 py-2 rounded-md transition-colors font-medium ${
-                billingPeriod === "yearly"
-                  ? "bg-muted-teal text-off-white"
-                  : "text-off-white/70 hover:text-off-white"
-              }`}
-            >
-              Yearly <span className="text-xs text-old-paper-yellow">(Save 17%)</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Pricing Tiers */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {tiers.map((tier) => {
-            const isCurrentTier = subscriptionInfo?.tier === tier.id;
-            const price =
-              billingPeriod === "monthly"
-                ? tier.monthlyPrice
-                : tier.yearlyPrice;
-            const isEnterprise = tier.id === "scholar";
-
-            return (
-              <div
-                key={tier.id}
-                className={`p-6 rounded-lg border-2 backdrop-blur-sm transition-all ${
-                  isCurrentTier
-                    ? "border-muted-teal bg-muted-teal/20 shadow-lg"
-                    : "border-off-white/20 bg-deep-charcoal/60 hover:border-muted-teal/50"
+          {/* Billing Period Toggle */}
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex bg-deep-charcoal/80 backdrop-blur-sm rounded-lg p-1 border border-muted-teal/30">
+              <button
+                onClick={() => setBillingPeriod("monthly")}
+                className={`px-6 py-2 rounded-md transition-colors font-medium ${
+                  billingPeriod === "monthly"
+                    ? "bg-muted-teal text-off-white"
+                    : "text-off-white/70 hover:text-off-white"
                 }`}
               >
-                <h3 className="text-xl font-bold text-old-paper-yellow mb-2">
-                  {tier.name}
-                </h3>
-                <div className="mb-4">
-                  {isEnterprise ? (
-                    <p className="text-3xl font-bold text-off-white">Custom</p>
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingPeriod("yearly")}
+                className={`px-6 py-2 rounded-md transition-colors font-medium ${
+                  billingPeriod === "yearly"
+                    ? "bg-muted-teal text-off-white"
+                    : "text-off-white/70 hover:text-off-white"
+                }`}
+              >
+                Yearly{" "}
+                <span className="text-xs text-old-paper-yellow">
+                  (Save 17%)
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Pricing Tiers */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {tiers.map((tier) => {
+              const isCurrentTier = subscriptionInfo?.tier === tier.id;
+              const price =
+                billingPeriod === "monthly"
+                  ? tier.monthlyPrice
+                  : tier.yearlyPrice;
+              const isEnterprise = tier.id === "scholar";
+
+              return (
+                <div
+                  key={tier.id}
+                  className={`p-6 rounded-lg border-2 backdrop-blur-sm transition-all ${
+                    isCurrentTier
+                      ? "border-muted-teal bg-muted-teal/20 shadow-lg"
+                      : "border-off-white/20 bg-deep-charcoal/60 hover:border-muted-teal/50"
+                  }`}
+                >
+                  <h3 className="text-xl font-bold text-old-paper-yellow mb-2">
+                    {tier.name}
+                  </h3>
+                  <div className="mb-4">
+                    {isEnterprise ? (
+                      <p className="text-3xl font-bold text-off-white">
+                        Custom
+                      </p>
+                    ) : (
+                      <>
+                        <span className="text-3xl font-bold text-off-white">
+                          ${price}
+                        </span>
+                        <span className="text-off-white/70">
+                          /{billingPeriod === "monthly" ? "mo" : "yr"}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <ul className="space-y-2 mb-6">
+                    {tier.features.map((feature, idx) => (
+                      <li
+                        key={idx}
+                        className="text-sm text-off-white/80 flex items-start"
+                      >
+                        <span className="text-muted-teal mr-2 font-bold">
+                          ✓
+                        </span>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  {isCurrentTier ? (
+                    <button
+                      disabled
+                      className="w-full px-4 py-2 bg-muted-teal/50 text-off-white/70 rounded-lg cursor-not-allowed font-medium"
+                    >
+                      Current Plan
+                    </button>
+                  ) : isEnterprise ? (
+                    <button
+                      onClick={() =>
+                        window.open("mailto:support@scholarvault.com", "_blank")
+                      }
+                      className="w-full px-4 py-2 bg-muted-teal hover:bg-muted-teal/90 text-off-white rounded-lg transition-colors font-medium"
+                    >
+                      Contact Sales
+                    </button>
+                  ) : tier.id === "student" ? (
+                    <button
+                      disabled
+                      className="w-full px-4 py-2 bg-off-white/10 text-off-white/50 rounded-lg cursor-not-allowed font-medium"
+                    >
+                      Free Plan
+                    </button>
                   ) : (
-                    <>
-                      <span className="text-3xl font-bold text-off-white">
-                        ${price}
-                      </span>
-                      <span className="text-off-white/70">
-                        /{billingPeriod === "monthly" ? "mo" : "yr"}
-                      </span>
-                    </>
+                    <button
+                      onClick={() => handleUpgrade(tier.id)}
+                      disabled={loading}
+                      className="w-full px-4 py-2 bg-muted-teal hover:bg-muted-teal/90 text-off-white rounded-lg disabled:opacity-50 transition-colors font-medium"
+                    >
+                      {subscriptionInfo && subscriptionInfo.tier === "student"
+                        ? "Upgrade"
+                        : "Switch Plan"}
+                    </button>
                   )}
                 </div>
-                <ul className="space-y-2 mb-6">
-                  {tier.features.map((feature, idx) => (
-                    <li
-                      key={idx}
-                      className="text-sm text-off-white/80 flex items-start"
-                    >
-                      <span className="text-muted-teal mr-2 font-bold">✓</span>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                {isCurrentTier ? (
-                  <button
-                    disabled
-                    className="w-full px-4 py-2 bg-muted-teal/50 text-off-white/70 rounded-lg cursor-not-allowed font-medium"
-                  >
-                    Current Plan
-                  </button>
-                ) : isEnterprise ? (
-                  <button
-                    onClick={() =>
-                      window.open("mailto:support@scholarvault.com", "_blank")
-                    }
-                    className="w-full px-4 py-2 bg-muted-teal hover:bg-muted-teal/90 text-off-white rounded-lg transition-colors font-medium"
-                  >
-                    Contact Sales
-                  </button>
-                ) : tier.id === "student" ? (
-                  <button
-                    disabled
-                    className="w-full px-4 py-2 bg-off-white/10 text-off-white/50 rounded-lg cursor-not-allowed font-medium"
-                  >
-                    Free Plan
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleUpgrade(tier.id)}
-                    disabled={loading}
-                    className="w-full px-4 py-2 bg-muted-teal hover:bg-muted-teal/90 text-off-white rounded-lg disabled:opacity-50 transition-colors font-medium"
-                  >
-                    {subscriptionInfo && subscriptionInfo.tier === "student"
-                      ? "Upgrade"
-                      : "Switch Plan"}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
 
-        {/* 30-Day Trial Info */}
-        <div className="mt-8 p-4 bg-old-paper-yellow/10 border border-old-paper-yellow/30 rounded-lg backdrop-blur-sm">
-          <p className="text-old-paper-yellow text-center font-medium">
-            Researcher tier includes a 30-day free trial. Card required - you
-            won&apos;t be charged until the trial ends. Cancel anytime.
-          </p>
-        </div>
+          {/* 30-Day Trial Info */}
+          <div className="mt-8 p-4 bg-old-paper-yellow/10 border border-old-paper-yellow/30 rounded-lg backdrop-blur-sm">
+            <p className="text-old-paper-yellow text-center font-medium">
+              Researcher tier includes a 30-day free trial. Card required - you
+              won&apos;t be charged until the trial ends. Cancel anytime.
+            </p>
+          </div>
         </div>
       </div>
     </div>

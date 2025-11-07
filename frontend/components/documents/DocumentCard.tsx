@@ -70,13 +70,13 @@ export function DocumentCard({
       >
         <div className="flex items-start gap-3">
           <FileText className="w-5 h-5 shrink-0 text-muted-teal mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold line-clamp-2 mb-2 min-h-[2.5rem]">
+          <div className="flex-1 min-w-0 ">
+            <h3 className="font-semibold line-clamp-2 mb-2 min-h-[2.5rem] ">
               {document.title}
             </h3>
             {/* Match Indicators - NEW */}
             {matchedFields && matchedFields.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-2">
+              <div className="flex flex-wrap gap-1 mb-2 ">
                 {matchedFields.map((field) => (
                   <span
                     key={field}
@@ -92,7 +92,7 @@ export function DocumentCard({
                 ))}
               </div>
             )}
-            <div className="flex flex-col gap-1 text-xs text-off-white/70">
+            <div className="flex flex-col gap-1 text-xs text-off-white/70 border-t border-t-old-paper-yellow/50">
               {document.authors && document.authors.length > 0 && (
                 <div className="flex items-center gap-1.5 min-h-[1.25rem]">
                   <User className="w-3 h-3 shrink-0" />
@@ -129,7 +129,7 @@ export function DocumentCard({
             e.stopPropagation();
             router.push(`/dashboard/documents/${document.id}`);
           }}
-          className="flex-1 text-off-white hover:bg-muted-teal/20 hover:text-muted-teal"
+          className="flex-1 text-off-white hover:bg-old-paper-yellow/20 hover:text-old-paper-yellow/90"
         >
           <Eye className="w-4 h-4 mr-1" />
           <span className="hidden sm:inline">View</span>

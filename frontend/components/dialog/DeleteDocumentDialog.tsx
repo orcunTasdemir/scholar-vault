@@ -30,8 +30,9 @@ export function DeleteDocumentDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Document Permanently?</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to permanently delete &quot;{documentTitle}&quot;?
-            This action cannot be undone and will remove the document from all collections.
+            Are you sure you want to permanently delete &quot;{documentTitle}
+            &quot;? This action cannot be undone and will remove the document
+            from all collections.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

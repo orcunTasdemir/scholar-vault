@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, SubscriptionInfo } from "@/lib/api";
 import { toast } from "sonner";
-import Image from "next/image";
+import DocumentHeader from "@/components/layout/DocumentHeader";
 
 export default function SubscriptionPage() {
   const { user, token, isLoading: authLoading } = useAuth();
@@ -126,45 +126,28 @@ export default function SubscriptionPage() {
       className="min-h-screen bg-cover bg-center bg-fixed"
       style={{ backgroundImage: "url('/background.png')" }}
     >
-      {/* Header - Compact */}
-      <header className="bg-deep-charcoal/90 backdrop-blur-sm border-b border-off-white/10 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="text-muted-teal hover:text-muted-teal/80 flex items-center gap-1 transition-colors text-sm"
-            >
-              ← Back to Dashboard
-            </button>
-            <div className="h-8 w-px bg-off-white/20"></div>
-            <Image
-              src="/logo.png"
-              alt="ScholarVault Logo"
-              width={40}
-              height={40}
-            />
-            <h1 className="text-lg font-bold text-off-white font-logo truncate">
-              Subscription Plans
-            </h1>
-          </div>
-        </div>
-      </header>
+      <DocumentHeader
+        title="Subscription Plans"
+        backPath="/dashboard"
+        backText="Back to Dashboard"
+      />
       <div className="max-w-7xl mx-auto p-6">
+        <div className="bg-deep-charcoal/50 backdrop-blur-md rounded-lg p-8 border border-off-white/10">
         {/* Current Subscription Status */}
         {subscriptionInfo && (
-          <div className="mb-8 p-6 bg-deep-charcoal/80 rounded-lg border border-muted-teal/30">
-            <h2 className="text-2xl font-bold text-off-white mb-4">
+          <div className="mb-8 p-6 bg-deep-charcoal/80 backdrop-blur-sm rounded-lg border border-muted-teal/30">
+            <h2 className="text-2xl font-bold text-old-paper-yellow mb-4">
               Current Subscription
             </h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-off-white/70">Tier</p>
+                <p className="text-sm text-old-paper-yellow/70">Tier</p>
                 <p className="text-lg font-semibold text-muted-teal capitalize">
                   {subscriptionInfo.tier}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-off-white/70">Status</p>
+                <p className="text-sm text-old-paper-yellow/70">Status</p>
                 <p className="text-lg font-semibold text-off-white capitalize">
                   {subscriptionInfo.status}
                 </p>
@@ -172,8 +155,8 @@ export default function SubscriptionPage() {
               {subscriptionInfo.is_trial_active &&
                 subscriptionInfo.trial_end_date && (
                   <div className="col-span-2">
-                    <p className="text-sm text-off-white/70">Trial Ends</p>
-                    <p className="text-lg font-semibold text-yellow-400">
+                    <p className="text-sm text-old-paper-yellow/70">Trial Ends</p>
+                    <p className="text-lg font-semibold text-old-paper-yellow">
                       {new Date(
                         subscriptionInfo.trial_end_date
                       ).toLocaleDateString()}
@@ -186,7 +169,7 @@ export default function SubscriptionPage() {
                 <button
                   onClick={handleCancel}
                   disabled={loading}
-                  className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50"
+                  className="mt-4 px-4 py-2 bg-destructive hover:bg-destructive/90 text-off-white rounded-lg disabled:opacity-50 transition-colors"
                 >
                   Cancel Subscription
                 </button>
@@ -196,10 +179,10 @@ export default function SubscriptionPage() {
 
         {/* Billing Period Toggle */}
         <div className="flex justify-center mb-8">
-          <div className="inline-flex bg-deep-charcoal/80 rounded-lg p-1 border border-muted-teal/30">
+          <div className="inline-flex bg-deep-charcoal/80 backdrop-blur-sm rounded-lg p-1 border border-muted-teal/30">
             <button
               onClick={() => setBillingPeriod("monthly")}
-              className={`px-6 py-2 rounded-md transition-colors ${
+              className={`px-6 py-2 rounded-md transition-colors font-medium ${
                 billingPeriod === "monthly"
                   ? "bg-muted-teal text-off-white"
                   : "text-off-white/70 hover:text-off-white"
@@ -209,13 +192,13 @@ export default function SubscriptionPage() {
             </button>
             <button
               onClick={() => setBillingPeriod("yearly")}
-              className={`px-6 py-2 rounded-md transition-colors ${
+              className={`px-6 py-2 rounded-md transition-colors font-medium ${
                 billingPeriod === "yearly"
                   ? "bg-muted-teal text-off-white"
                   : "text-off-white/70 hover:text-off-white"
               }`}
             >
-              Yearly <span className="text-xs">(Save 17%)</span>
+              Yearly <span className="text-xs text-old-paper-yellow">(Save 17%)</span>
             </button>
           </div>
         </div>
@@ -233,13 +216,13 @@ export default function SubscriptionPage() {
             return (
               <div
                 key={tier.id}
-                className={`p-6 rounded-lg border-2 ${
+                className={`p-6 rounded-lg border-2 backdrop-blur-sm transition-all ${
                   isCurrentTier
-                    ? "border-muted-teal bg-muted-teal/10"
-                    : "border-deep-charcoal/50 bg-deep-charcoal/60"
+                    ? "border-muted-teal bg-muted-teal/20 shadow-lg"
+                    : "border-off-white/20 bg-deep-charcoal/60 hover:border-muted-teal/50"
                 }`}
               >
-                <h3 className="text-xl font-bold text-off-white mb-2">
+                <h3 className="text-xl font-bold text-old-paper-yellow mb-2">
                   {tier.name}
                 </h3>
                 <div className="mb-4">
@@ -262,7 +245,7 @@ export default function SubscriptionPage() {
                       key={idx}
                       className="text-sm text-off-white/80 flex items-start"
                     >
-                      <span className="text-muted-teal mr-2">✓</span>
+                      <span className="text-muted-teal mr-2 font-bold">✓</span>
                       {feature}
                     </li>
                   ))}
@@ -270,7 +253,7 @@ export default function SubscriptionPage() {
                 {isCurrentTier ? (
                   <button
                     disabled
-                    className="w-full px-4 py-2 bg-muted-teal/50 text-off-white rounded-lg cursor-not-allowed"
+                    className="w-full px-4 py-2 bg-muted-teal/50 text-off-white/70 rounded-lg cursor-not-allowed font-medium"
                   >
                     Current Plan
                   </button>
@@ -279,14 +262,14 @@ export default function SubscriptionPage() {
                     onClick={() =>
                       window.open("mailto:support@scholarvault.com", "_blank")
                     }
-                    className="w-full px-4 py-2 bg-muted-teal hover:bg-muted-teal/90 text-off-white rounded-lg"
+                    className="w-full px-4 py-2 bg-muted-teal hover:bg-muted-teal/90 text-off-white rounded-lg transition-colors font-medium"
                   >
                     Contact Sales
                   </button>
                 ) : tier.id === "student" ? (
                   <button
                     disabled
-                    className="w-full px-4 py-2 bg-deep-charcoal/50 text-off-white/50 rounded-lg cursor-not-allowed"
+                    className="w-full px-4 py-2 bg-off-white/10 text-off-white/50 rounded-lg cursor-not-allowed font-medium"
                   >
                     Free Plan
                   </button>
@@ -294,7 +277,7 @@ export default function SubscriptionPage() {
                   <button
                     onClick={() => handleUpgrade(tier.id)}
                     disabled={loading}
-                    className="w-full px-4 py-2 bg-muted-teal hover:bg-muted-teal/90 text-off-white rounded-lg disabled:opacity-50"
+                    className="w-full px-4 py-2 bg-muted-teal hover:bg-muted-teal/90 text-off-white rounded-lg disabled:opacity-50 transition-colors font-medium"
                   >
                     {subscriptionInfo && subscriptionInfo.tier === "student"
                       ? "Upgrade"
@@ -307,11 +290,12 @@ export default function SubscriptionPage() {
         </div>
 
         {/* 30-Day Trial Info */}
-        <div className="mt-8 p-4 bg-yellow-400/10 border border-yellow-400/30 rounded-lg">
-          <p className="text-yellow-400 text-center">
+        <div className="mt-8 p-4 bg-old-paper-yellow/10 border border-old-paper-yellow/30 rounded-lg backdrop-blur-sm">
+          <p className="text-old-paper-yellow text-center font-medium">
             Researcher tier includes a 30-day free trial. Card required - you
             won&apos;t be charged until the trial ends. Cancel anytime.
           </p>
+        </div>
         </div>
       </div>
     </div>

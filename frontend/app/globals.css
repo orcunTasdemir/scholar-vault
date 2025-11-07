@@ -278,3 +278,34 @@
   animation: flowDown 120s linear infinite;
   animation-delay: -106s;
 }
+
+/* ============================================================================
+   CUSTOM SCROLLBAR
+   ============================================================================ */
+
+/* Custom scrollbar for webkit browsers (Chrome, Safari, Edge) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--deep-charcoal);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--muted-teal);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--old-paper-yellow);
+}
+
+/* Firefox scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted-teal) var(--deep-charcoal);
+}

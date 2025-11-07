@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import Image from "next/image";
+import DocumentHeader from "@/components/layout/DocumentHeader";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://10.0.0.53:3000";
 
@@ -131,47 +132,33 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen ">
-      {/* Header - Compact */}
-      <header className="bg-deep-charcoal/90 backdrop-blur-sm border-b border-off-white/10 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="text-muted-teal hover:text-muted-teal/80 flex items-center gap-1 transition-colors text-sm"
-            >
-              ← Back to Dashboard
-            </button>
-            <div className="h-8 w-px bg-off-white/20"></div>
-            <Image
-              src="/logo.png"
-              alt="ScholarVault Logo"
-              width={40}
-              height={40}
-            />
-            <h1 className="text-lg font-bold text-off-white font-logo truncate">
-              Profile Settings
-            </h1>
-          </div>
-        </div>
-      </header>
+    <div
+      className="min-h-screen bg-cover bg-center bg-fixed"
+      style={{ backgroundImage: "url('/background.png')" }}
+    >
+      <DocumentHeader
+        title="Profile Settings"
+        backPath="/dashboard"
+        backText="Back to Dashboard"
+      />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-deep-charcoal/50 backdrop-blur-md rounded-lg p-8 border border-off-white/10">
         {/* Success/Error Messages */}
         {message && (
-          <div className="mb-6 bg-green-50 border border-green-400 text-green-700 px-4 py-3 rounded">
+          <div className="mb-6 bg-muted-teal/10 border border-muted-teal text-off-white px-4 py-3 rounded-lg">
             {message}
           </div>
         )}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <div className="mb-6 bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg">
             {error}
           </div>
         )}
 
         {/* Profile Image Section */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="bg-deep-charcoal/80 backdrop-blur-sm border border-off-white/10 rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold text-old-paper-yellow mb-4">
             Profile Image
           </h2>
           <div className="flex items-start gap-6">
@@ -182,24 +169,24 @@ export default function ProfilePage() {
                   alt="Profile"
                   width={120}
                   height={120}
-                  className="rounded-full object-cover border-4 border-gray-200"
+                  className="rounded-full object-cover border-4 border-muted-teal"
                 />
               ) : (
-                <div className="w-30 h-30 bg-blue-600 rounded-full flex items-center justify-center text-white text-4xl font-semibold">
+                <div className="w-30 h-30 bg-muted-teal rounded-full flex items-center justify-center text-off-white text-4xl font-semibold">
                   {(user.username || user.email).charAt(0).toUpperCase()}
                 </div>
               )}
             </div>
             <div className="flex-1">
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-off-white/70 mb-4">
                 Upload a profile image. JPG, PNG, or WebP. Max size 5MB.
               </p>
               <div className="flex gap-3">
                 <label
                   className={`px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-colors ${
                     isUploadingImage
-                      ? "bg-gray-400 text-white cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
+                      ? "bg-off-white/20 text-off-white/40 cursor-not-allowed"
+                      : "bg-muted-teal text-off-white hover:bg-muted-teal/90"
                   }`}
                 >
                   {isUploadingImage ? "Uploading..." : "Upload Image"}
@@ -214,7 +201,7 @@ export default function ProfilePage() {
                 {profileImage && (
                   <button
                     onClick={handleDeleteImage}
-                    className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
+                    className="px-4 py-2 bg-destructive text-off-white text-sm rounded-md hover:bg-destructive/90 transition-colors"
                   >
                     Delete Image
                   </button>
@@ -225,28 +212,28 @@ export default function ProfilePage() {
         </div>
 
         {/* Account Information Section */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="bg-deep-charcoal/80 backdrop-blur-sm border border-off-white/10 rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold text-old-paper-yellow mb-4">
             Account Information
           </h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-old-paper-yellow mb-1">
                 Email
               </label>
               <input
                 type="email"
                 value={user.email}
                 disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 cursor-not-allowed"
+                className="w-full px-3 py-2 border border-off-white/20 rounded-md bg-deep-charcoal/50 text-off-white/50 cursor-not-allowed"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-off-white/50">
                 Email cannot be changed
               </p>
             </div>
 
             <form onSubmit={handleUpdateUsername}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-old-paper-yellow mb-1">
                 Username
               </label>
               <div className="flex gap-3">
@@ -255,15 +242,15 @@ export default function ProfilePage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter username (optional)"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-3 py-2 border border-off-white/20 bg-deep-charcoal/50 text-off-white placeholder:text-off-white/40 rounded-md focus:outline-none focus:ring-2 focus:ring-muted-teal focus:border-muted-teal"
                 />
                 <button
                   type="submit"
                   disabled={isUpdating}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     isUpdating
-                      ? "bg-gray-400 text-white cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
+                      ? "bg-off-white/20 text-off-white/40 cursor-not-allowed"
+                      : "bg-muted-teal text-off-white hover:bg-muted-teal/90"
                   }`}
                 >
                   {isUpdating ? "Saving..." : "Save"}
@@ -274,25 +261,26 @@ export default function ProfilePage() {
         </div>
 
         {/* Danger Zone */}
-        <div className="bg-white rounded-lg shadow p-6 border-2 border-red-200">
-          <h2 className="text-xl font-semibold text-red-600 mb-4">
+        <div className="bg-deep-charcoal/80 backdrop-blur-sm border-2 border-destructive/50 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-old-paper-yellow mb-4">
             Danger Zone
           </h2>
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-900">Sign Out</p>
-              <p className="text-sm text-gray-600">Sign out of your account</p>
+              <p className="font-medium text-off-white">Sign Out</p>
+              <p className="text-sm text-off-white/70">Sign out of your account</p>
             </div>
             <button
               onClick={() => {
                 logout();
                 router.push("/login");
               }}
-              className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
+              className="px-4 py-2 bg-destructive text-off-white text-sm rounded-md hover:bg-destructive/90 transition-colors"
             >
               Sign Out
             </button>
           </div>
+        </div>
         </div>
       </main>
     </div>

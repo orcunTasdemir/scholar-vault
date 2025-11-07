@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api, Document } from "@/lib/api";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://10.0.0.53:3000";
 
-import Image from "next/image";
+import DocumentHeader from "@/components/layout/DocumentHeader";
 
 export default function DocumentDetailPage() {
   const params = useParams();
@@ -18,7 +18,7 @@ export default function DocumentDetailPage() {
   const [document, setDocument] = useState<Document | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showPDF, setShowPDF] = useState(true); //set default to true for better UI
+  const [showPDF, setShowPDF] = useState(true);
 
   const [showChat, setShowChat] = useState(false);
   const [messages, setMessages] = useState<
@@ -33,6 +33,9 @@ export default function DocumentDetailPage() {
   const [generatedCitation, setGeneratedCitation] = useState("");
 
   const documentId = params.id as string;
+
+  // Calculate layout mode
+  const isExpanded = !showChat && !showPDF;
 
   useEffect(() => {
     const fetchDocument = async () => {
@@ -79,7 +82,6 @@ export default function DocumentDetailPage() {
 
       switch (format) {
         case "APA":
-          // Author(s). (Year). Title. Journal, Volume(Issue), pages. DOI
           let apa = `${authors}. (${year}). ${title}.`;
           if (journal) apa += ` ${journal}`;
           if (volume) apa += `, ${volume}`;
@@ -89,7 +91,6 @@ export default function DocumentDetailPage() {
           return apa;
 
         case "MLA":
-          // Author(s). "Title." Journal, vol. X, no. X, Year, pp. pages.
           let mla = `${authors}. "${title}."`;
           if (journal) mla += ` ${journal}`;
           if (volume) mla += `, vol. ${volume}`;
@@ -100,7 +101,6 @@ export default function DocumentDetailPage() {
           return mla;
 
         case "Chicago":
-          // Author(s). "Title." Journal Volume, no. Issue (Year): pages.
           let chicago = `${authors}. "${title}."`;
           if (journal) chicago += ` ${journal}`;
           if (volume) chicago += ` ${volume}`;
@@ -111,7 +111,6 @@ export default function DocumentDetailPage() {
           return chicago;
 
         case "IEEE":
-          // Author(s), "Title," Journal, vol. X, no. X, pp. pages, Year.
           let ieee = `${authors}, "${title},"`;
           if (journal) ieee += ` ${journal}`;
           if (volume) ieee += `, vol. ${volume}`;
@@ -121,7 +120,6 @@ export default function DocumentDetailPage() {
           return ieee;
 
         case "BibTeX":
-          // BibTeX format
           const firstAuthor =
             document.authors?.[0]?.split(" ").pop()?.toLowerCase() || "unknown";
           const bibKey = `${firstAuthor}${year}${title
@@ -180,7 +178,6 @@ export default function DocumentDetailPage() {
     const userMessage = chatInput.trim();
     setChatInput("");
 
-    //add user messages to chat
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setIsSending(true);
 
@@ -197,7 +194,6 @@ export default function DocumentDetailPage() {
     } catch (error) {
       console.error("Chat error: ", error);
       toast.error("Failed to send message");
-      //Remove the user message if failed
       setMessages((prev) => prev.slice(0, -1));
     } finally {
       setIsSending(false);
@@ -221,36 +217,18 @@ export default function DocumentDetailPage() {
       className="min-h-screen bg-cover bg-center bg-fixed"
       style={{ backgroundImage: "url('/background.png')" }}
     >
-      {/* Header - Compact */}
-      <header className="bg-deep-charcoal/90 backdrop-blur-sm border-b border-off-white/10 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="text-muted-teal hover:text-muted-teal/80 flex items-center gap-1 transition-colors text-sm"
-            >
-              ← Back
-            </button>
-            <div className="h-4 w-px bg-off-white/20"></div>
-            <Image
-              src="/logo.png"
-              alt="ScholarVault Logo"
-              width={28}
-              height={28}
-            />
-            <h1 className="text-lg font-bold text-off-white font-logo truncate">
-              {document.title}
-            </h1>
-          </div>
-        </div>
-      </header>
+      <DocumentHeader
+        title={document.title}
+        backPath="/dashboard"
+        backText="Back"
+      />
 
       {/* Main Content */}
       <main className="w-screen px-2 sm:px-2 lg:px-2 py-2 h-[calc(100vh-3rem)]">
-        <div className="w-full h-full mx-auto rounded-lg bg-deep-charcoal/80 backdrop-blur-sm border border-off-white/10 p-6 flex flex-row gap-1 overflow-hidden">
-          {/* First Col - Metadata */}
+        <div className="w-full h-full mx-auto rounded-lg bg-deep-charcoal/80 backdrop-blur-sm border border-off-white/10 p-6 flex flex-row gap-6 overflow-hidden">
+          {/* Metadata Panel - Responsive Layout */}
           <div
-            className="mx-auto transition-all duration-700 ease-in-out min-w-0 overflow-y-auto"
+            className="min-w-0 overflow-y-auto transition-all duration-500 ease-in-out pr-2 custom-scrollbar"
             style={{
               flex: showChat
                 ? "0 0 calc(20% - 16px)"
@@ -260,244 +238,400 @@ export default function DocumentDetailPage() {
             }}
           >
             <div
-              className={`grid grid-cols-1 gap-1 transition-all duration-700 ease-in-out`}
+              className={`transition-all duration-500 pr-2 ${
+                isExpanded ? "grid grid-cols-2 gap-8" : "grid grid-cols-1 gap-4"
+              }`}
             >
-              {/* Authors */}
-              {document.authors && document.authors.length > 0 && (
-                <div>
-                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
-                    Authors
-                  </label>
-                  <p className="text-off-white text-sm">
-                    {document.authors.join(", ")}
-                  </p>
-                </div>
-              )}
-
-              {/* Year */}
-              {document.year && (
-                <div>
-                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
-                    Year
-                  </label>
-                  <p className="text-off-white text-sm">{document.year}</p>
-                </div>
-              )}
-
-              {/* Publication Type */}
-              {document.publication_type && (
-                <div>
-                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
-                    Publication Type
-                  </label>
-                  <p className="text-off-white text-sm">
-                    {document.publication_type}
-                  </p>
-                </div>
-              )}
-
-              {/* Journal */}
-              {document.journal && (
-                <div>
-                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
-                    Journal
-                  </label>
-                  <p className="text-off-white text-sm">{document.journal}</p>
-                </div>
-              )}
-
-              {/* Volume */}
-              {document.volume && (
-                <div>
-                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
-                    Volume
-                  </label>
-                  <p className="text-off-white text-sm">{document.volume}</p>
-                </div>
-              )}
-
-              {/* Issue */}
-              {document.issue && (
-                <div>
-                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
-                    Issue
-                  </label>
-                  <p className="text-off-white text-sm">{document.issue}</p>
-                </div>
-              )}
-
-              {/* Pages */}
-              {document.pages && (
-                <div>
-                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
-                    Pages
-                  </label>
-                  <p className="text-off-white text-sm">{document.pages}</p>
-                </div>
-              )}
-
-              {/* Publisher */}
-              {document.publisher && (
-                <div>
-                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
-                    Publisher
-                  </label>
-                  <p className="text-off-white text-sm">{document.publisher}</p>
-                </div>
-              )}
-
-              {/* DOI */}
-              {document.doi && (
-                <div>
-                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
-                    DOI
-                  </label>
-                  <p className="text-off-white text-sm">{document.doi}</p>
-                </div>
-              )}
-
-              {/* URL */}
-              {document.url && (
-                <div>
-                  <label className="block text-xs font-medium text-muted-teal mb-0.5">
-                    URL
-                  </label>
-                  <a
-                    href={document.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted-teal hover:text-muted-teal/80 break-all underline text-sm"
-                  >
-                    {document.url}
-                  </a>
-                </div>
-              )}
-            </div>
-
-            {/* Keywords */}
-            {document.keywords && document.keywords.length > 0 && (
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-off-white mb-2">
-                  Keywords
-                </label>
-                <div className="flex flex-wrap gap-1">
-                  {document.keywords.map((keyword, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-muted-teal/30 text-off-white border border-muted-teal/50 rounded-full text-sm font-medium"
+              {/* LEFT COLUMN - Main Metadata */}
+              <div className="space-y-4">
+                {/* Authors */}
+                {document.authors && document.authors.length > 0 && (
+                  <div>
+                    <label
+                      className={`block font-semibold text-old-paper-yellow mb-1 ${
+                        isExpanded ? "text-sm" : "text-xs"
+                      }`}
                     >
-                      {keyword}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Abstract - Hidden when chat is active */}
-            <div
-              className="mt-6 overflow-hidden transition-all duration-700 ease-in-out"
-              style={{
-                maxHeight: showChat ? "0px" : "2000px",
-                opacity: showChat ? 0 : 1,
-                marginTop: showChat ? "0px" : "24px",
-              }}
-            >
-              {document.abstract_text && (
-                <>
-                  <label className="block text-sm font-medium text-muted-teal mb-2">
-                    Abstract
-                  </label>
-                  <p className="text-off-white/90 whitespace-pre-wrap leading-relaxed">
-                    {document.abstract_text}
-                  </p>
-                </>
-              )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="mt-4 flex flex-wrap gap-1">
-              <button
-                onClick={() =>
-                  router.push(`/dashboard/documents/${documentId}/edit`)
-                }
-                className="px-6 py-2.5 bg-muted-teal hover:bg-muted-teal/90 text-off-white font-semibold rounded-lg transition-colors"
-              >
-                Edit Document
-              </button>
-
-              {/* PDF Buttons */}
-              {document.pdf_url && (
-                <>
-                  <button
-                    onClick={() => setShowPDF(!showPDF)}
-                    className="px-6 py-2.5 bg-muted-teal/20 hover:bg-muted-teal/30 text-off-white border border-muted-teal/30 font-semibold rounded-lg transition-colors"
-                  >
-                    {showPDF ? "Hide PDF" : "Show PDF"}
-                  </button>
-
-                  <button
-                    onClick={() => setShowChat(!showChat)}
-                    className="inline-flex items-center gap-1 px-6 py-2.5 bg-old-paper-yellow/20 hover:bg-old-paper-yellow/30 text-old-paper-yellow border border-old-paper-yellow/30 font-semibold rounded-lg transition-colors"
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    {showChat ? "Hide Chat" : "Chat with Document"}
-                  </button>
-
-                  <a
-                    href={`${API_BASE_URL}/${document.pdf_url}`}
-                    download
-                    className="inline-block px-6 py-2.5 bg-off-white/10 hover:bg-off-white/20 text-off-white border border-off-white/20 font-semibold rounded-lg transition-colors"
-                  >
-                    Download PDF
-                  </a>
-                </>
-              )}
-            </div>
-            {/* Citation Exporter */}
-            <div className="mt-4 space-y-3 pr-2">
-              <label className="block text-sm font-medium text-muted-teal">
-                Export Citation
-              </label>
-
-              {/* Format Dropdown */}
-              <div className="flex gap-2 max-w-18">
-                <select
-                  value={citationFormat}
-                  onChange={(e) =>
-                    setCitationFormat(e.target.value as typeof citationFormat)
-                  }
-                  className="flex-1 px-4 py-2 bg-deep-charcoal/50 border border-off-white/20 text-off-white rounded-lg focus:outline-none focus:ring-2 focus:ring-muted-teal/50 focus:border-muted-teal/50"
-                >
-                  <option value="APA">APA (7th Edition)</option>
-                  <option value="MLA">MLA (9th Edition)</option>
-                  <option value="Chicago">Chicago (Author-Date)</option>
-                  <option value="IEEE">IEEE</option>
-                  <option value="BibTeX">BibTeX</option>
-                </select>
-              </div>
-
-              {/* Citation Display Box */}
-              {generatedCitation && (
-                <div className="relative max-w-200">
-                  <div className="p-4 bg-off-white/5 border border-off-white/20 rounded-lg text-off-white text-sm font-mono whitespace-pre-wrap break-words">
-                    {generatedCitation}
+                      Authors
+                    </label>
+                    <p
+                      className={`text-off-white ${
+                        isExpanded ? "text-base leading-relaxed" : "text-sm"
+                      }`}
+                    >
+                      {document.authors.join(", ")}
+                    </p>
                   </div>
-                  <button
-                    onClick={handleCopyCitation}
-                    className="absolute top-2 right-2 p-2 bg-muted-teal hover:bg-muted-teal/90 text-off-white rounded-md transition-colors"
-                    title="Copy to clipboard"
+                )}
+
+                {/* Year */}
+                {document.year && (
+                  <div>
+                    <label
+                      className={`block font-semibold text-old-paper-yellow mb-1 ${
+                        isExpanded ? "text-sm" : "text-xs"
+                      }`}
+                    >
+                      Year
+                    </label>
+                    <p
+                      className={`text-off-white ${
+                        isExpanded ? "text-base" : "text-sm"
+                      }`}
+                    >
+                      {document.year}
+                    </p>
+                  </div>
+                )}
+
+                {/* Publication Type */}
+                {document.publication_type && (
+                  <div>
+                    <label
+                      className={`block font-semibold text-old-paper-yellow mb-1 ${
+                        isExpanded ? "text-sm" : "text-xs"
+                      }`}
+                    >
+                      Publication Type
+                    </label>
+                    <p
+                      className={`text-off-white ${
+                        isExpanded ? "text-base" : "text-sm"
+                      }`}
+                    >
+                      {document.publication_type}
+                    </p>
+                  </div>
+                )}
+
+                {/* Journal */}
+                {document.journal && (
+                  <div>
+                    <label
+                      className={`block font-semibold text-old-paper-yellow mb-1 ${
+                        isExpanded ? "text-sm" : "text-xs"
+                      }`}
+                    >
+                      Journal
+                    </label>
+                    <p
+                      className={`text-off-white ${
+                        isExpanded ? "text-base" : "text-sm"
+                      }`}
+                    >
+                      {document.journal}
+                    </p>
+                  </div>
+                )}
+
+                {/* Volume */}
+                {document.volume && (
+                  <div>
+                    <label
+                      className={`block font-semibold text-old-paper-yellow mb-1 ${
+                        isExpanded ? "text-sm" : "text-xs"
+                      }`}
+                    >
+                      Volume
+                    </label>
+                    <p
+                      className={`text-off-white ${
+                        isExpanded ? "text-base" : "text-sm"
+                      }`}
+                    >
+                      {document.volume}
+                    </p>
+                  </div>
+                )}
+
+                {/* Issue */}
+                {document.issue && (
+                  <div>
+                    <label
+                      className={`block font-semibold text-old-paper-yellow mb-1 ${
+                        isExpanded ? "text-sm" : "text-xs"
+                      }`}
+                    >
+                      Issue
+                    </label>
+                    <p
+                      className={`text-off-white ${
+                        isExpanded ? "text-base" : "text-sm"
+                      }`}
+                    >
+                      {document.issue}
+                    </p>
+                  </div>
+                )}
+
+                {/* Pages */}
+                {document.pages && (
+                  <div>
+                    <label
+                      className={`block font-semibold text-old-paper-yellow mb-1 ${
+                        isExpanded ? "text-sm" : "text-xs"
+                      }`}
+                    >
+                      Pages
+                    </label>
+                    <p
+                      className={`text-off-white ${
+                        isExpanded ? "text-base" : "text-sm"
+                      }`}
+                    >
+                      {document.pages}
+                    </p>
+                  </div>
+                )}
+
+                {/* Publisher */}
+                {document.publisher && (
+                  <div>
+                    <label
+                      className={`block font-semibold text-old-paper-yellow mb-1 ${
+                        isExpanded ? "text-sm" : "text-xs"
+                      }`}
+                    >
+                      Publisher
+                    </label>
+                    <p
+                      className={`text-off-white ${
+                        isExpanded ? "text-base" : "text-sm"
+                      }`}
+                    >
+                      {document.publisher}
+                    </p>
+                  </div>
+                )}
+
+                {/* DOI */}
+                {document.doi && (
+                  <div>
+                    <label
+                      className={`block font-semibold text-old-paper-yellow mb-1 ${
+                        isExpanded ? "text-sm" : "text-xs"
+                      }`}
+                    >
+                      DOI
+                    </label>
+                    <p
+                      className={`text-off-white ${
+                        isExpanded ? "text-base" : "text-sm"
+                      }`}
+                    >
+                      {document.doi}
+                    </p>
+                  </div>
+                )}
+
+                {/* URL */}
+                {document.url && (
+                  <div>
+                    <label
+                      className={`block font-semibold text-old-paper-yellow mb-1 ${
+                        isExpanded ? "text-sm" : "text-xs"
+                      }`}
+                    >
+                      URL
+                    </label>
+                    <a
+                      href={document.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`text-old-paper-yellow hover:text-old-paper-yellow/80 break-all underline transition-colors ${
+                        isExpanded ? "text-base" : "text-sm"
+                      }`}
+                    >
+                      {document.url}
+                    </a>
+                  </div>
+                )}
+
+                {/* Action Buttons - Only in compact mode */}
+                {!isExpanded && (
+                  <div className="mt-6 flex flex-col gap-2">
+                    <button
+                      onClick={() =>
+                        router.push(`/dashboard/documents/${documentId}/edit`)
+                      }
+                      className="w-full px-4 py-2 bg-muted-teal hover:bg-muted-teal/90 text-off-white font-semibold rounded-lg transition-colors text-sm"
+                    >
+                      Edit Document
+                    </button>
+
+                    {document.pdf_url && (
+                      <>
+                        <button
+                          onClick={() => setShowPDF(!showPDF)}
+                          className="w-full px-4 py-2 bg-muted-teal/20 hover:bg-muted-teal/30 text-off-white border border-muted-teal/50 font-semibold rounded-lg transition-colors text-sm"
+                        >
+                          {showPDF ? "Hide PDF" : "Show PDF"}
+                        </button>
+
+                        <button
+                          onClick={() => setShowChat(!showChat)}
+                          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-old-paper-yellow/20 hover:bg-old-paper-yellow/30 text-old-paper-yellow border border-old-paper-yellow/50 font-semibold rounded-lg transition-colors text-sm"
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          {showChat ? "Hide Chat" : "Chat with Document"}
+                        </button>
+
+                        <a
+                          href={`${API_BASE_URL}/${document.pdf_url}`}
+                          download
+                          className="w-full inline-block text-center px-4 py-2 bg-off-white/10 hover:bg-off-white/20 text-off-white border border-off-white/30 font-semibold rounded-lg transition-colors text-sm"
+                        >
+                          Download PDF
+                        </a>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* RIGHT COLUMN - Keywords, Abstract, Citation */}
+              <div className="space-y-6">
+                {/* Keywords */}
+                {document.keywords && document.keywords.length > 0 && (
+                  <div>
+                    <label
+                      className={`block font-semibold text-old-paper-yellow mb-2 ${
+                        isExpanded ? "text-base" : "text-sm"
+                      }`}
+                    >
+                      Keywords
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {document.keywords.map((keyword, index) => (
+                        <span
+                          key={index}
+                          className={`px-3 py-1.5 bg-old-paper-yellow/20 text-old-paper-yellow border border-old-paper-yellow/40 rounded-full font-medium transition-colors hover:bg-old-paper-yellow/30 ${
+                            isExpanded ? "text-sm" : "text-xs"
+                          }`}
+                        >
+                          {keyword}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Abstract */}
+                {document.abstract_text && (
+                  <div>
+                    <label
+                      className={`block font-semibold text-old-paper-yellow mb-2 ${
+                        isExpanded ? "text-base" : "text-sm"
+                      }`}
+                    >
+                      Abstract
+                    </label>
+                    <p
+                      className={`text-off-white/90 whitespace-pre-wrap leading-relaxed ${
+                        isExpanded ? "text-base" : "text-sm"
+                      }`}
+                    >
+                      {document.abstract_text}
+                    </p>
+                  </div>
+                )}
+
+                {/* Citation Exporter */}
+                <div className="space-y-3">
+                  <label
+                    className={`block font-semibold text-old-paper-yellow ${
+                      isExpanded ? "text-base" : "text-sm"
+                    }`}
                   >
-                    <Copy className="h-4 w-4" />
-                  </button>
+                    Export Citation
+                  </label>
+
+                  <select
+                    value={citationFormat}
+                    onChange={(e) =>
+                      setCitationFormat(e.target.value as typeof citationFormat)
+                    }
+                    className={`w-full px-4 py-2.5 bg-deep-charcoal/50 border border-old-paper-yellow/30 text-off-white rounded-lg focus:outline-none focus:ring-2 focus:ring-old-paper-yellow/50 focus:border-old-paper-yellow transition-colors ${
+                      isExpanded ? "text-base" : "text-sm"
+                    }`}
+                  >
+                    <option value="APA">APA (7th Edition)</option>
+                    <option value="MLA">MLA (9th Edition)</option>
+                    <option value="Chicago">Chicago (Author-Date)</option>
+                    <option value="IEEE">IEEE</option>
+                    <option value="BibTeX">BibTeX</option>
+                  </select>
+
+                  {generatedCitation && (
+                    <div className="relative">
+                      <div
+                        className={`p-4 bg-off-white/5 border border-old-paper-yellow/30 rounded-lg text-off-white font-mono whitespace-pre-wrap break-words ${
+                          isExpanded ? "text-sm" : "text-xs"
+                        }`}
+                      >
+                        {generatedCitation}
+                      </div>
+                      <button
+                        onClick={handleCopyCitation}
+                        className={`absolute top-2 right-2 p-2 bg-old-paper-yellow hover:bg-old-paper-yellow/90 text-deep-charcoal rounded-md transition-colors ${
+                          isExpanded ? "" : "scale-90"
+                        }`}
+                        title="Copy to clipboard"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
+
+                {/* Action Buttons - Only in expanded mode */}
+                {isExpanded && (
+                  <div className="mt-8 flex flex-wrap gap-3">
+                    <button
+                      onClick={() =>
+                        router.push(`/dashboard/documents/${documentId}/edit`)
+                      }
+                      className="px-6 py-3 bg-muted-teal hover:bg-muted-teal/90 text-off-white font-semibold rounded-lg transition-colors text-base"
+                    >
+                      Edit Document
+                    </button>
+
+                    {document.pdf_url && (
+                      <>
+                        <button
+                          onClick={() => setShowPDF(!showPDF)}
+                          className="px-6 py-3 bg-muted-teal/20 hover:bg-muted-teal/30 text-off-white border border-muted-teal/50 font-semibold rounded-lg transition-colors text-base"
+                        >
+                          Show PDF
+                        </button>
+
+                        <button
+                          onClick={() => setShowChat(!showChat)}
+                          className="inline-flex items-center gap-2 px-6 py-3 bg-old-paper-yellow/20 hover:bg-old-paper-yellow/30 text-old-paper-yellow border border-old-paper-yellow/50 font-semibold rounded-lg transition-colors text-base"
+                        >
+                          <MessageSquare className="h-5 w-5" />
+                          Chat with Document
+                        </button>
+
+                        <a
+                          href={`${API_BASE_URL}/${document.pdf_url}`}
+                          download
+                          className="inline-block px-6 py-3 bg-off-white/10 hover:bg-off-white/20 text-off-white border border-off-white/30 font-semibold rounded-lg transition-colors text-base"
+                        >
+                          Download PDF
+                        </a>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Second Col - Chat (always in DOM, visibility controlled) */}
+          {/* Chat Panel */}
           {document.pdf_url && (
             <div
-              className="transition-all duration-700 ease-in-out overflow-hidden min-w-0"
+              className="transition-all duration-500 ease-in-out overflow-hidden min-w-0"
               style={{
                 flex: showChat
                   ? showPDF
@@ -505,22 +639,20 @@ export default function DocumentDetailPage() {
                     : "0 0 calc(80% - 16px)"
                   : "0 0 0px",
                 opacity: showChat ? 1 : 0,
-                transform: showChat ? "translateX(0)" : "translateX(-20px)",
+                visibility: showChat ? "visible" : "hidden",
               }}
             >
-              <div className="border border-off-white/20 rounded-lg overflow-hidden bg-deep-charcoal/50 flex flex-col h-full">
-                <div className="bg-old-paper-yellow/20 px-4 py-3 border-b border-old-paper-yellow/30">
-                  <h3 className="font-semibold text-off-white flex items-center gap-1">
+              <div className="border border-old-paper-yellow/30 rounded-lg overflow-hidden bg-deep-charcoal/50 flex flex-col h-full">
+                <div className="bg-old-paper-yellow/10 px-4 py-3 border-b border-old-paper-yellow/30">
+                  <h3 className="font-semibold text-off-white flex items-center gap-2">
                     <MessageSquare className="h-5 w-5 text-old-paper-yellow" />
                     Chat with Document
                   </h3>
                   <p className="text-sm text-off-white/70 mt-1">
-                    Ask questions about this paper and get answers from an AI
-                    that has read it.
+                    Ask questions about this paper and get AI-powered answers
                   </p>
                 </div>
 
-                {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   {messages.length === 0 ? (
                     <div className="text-center text-off-white/60 mt-20">
@@ -564,9 +696,8 @@ export default function DocumentDetailPage() {
                   )}
                 </div>
 
-                {/* Input */}
-                <div className="border-t border-off-white/20 p-4 bg-deep-charcoal/30">
-                  <div className="flex gap-1">
+                <div className="border-t border-old-paper-yellow/30 p-4 bg-deep-charcoal/30">
+                  <div className="flex gap-2">
                     <input
                       type="text"
                       value={chatInput}
@@ -574,12 +705,12 @@ export default function DocumentDetailPage() {
                       onKeyPress={handleKeyPress}
                       placeholder="Ask a question about this paper..."
                       disabled={isSending}
-                      className="flex-1 px-4 py-2 border border-off-white/20 bg-deep-charcoal/50 text-off-white placeholder:text-off-white/40 rounded-md focus:outline-none focus:ring-2 focus:ring-old-paper-yellow/50 focus:border-old-paper-yellow/50 disabled:opacity-50"
+                      className="flex-1 px-4 py-2 border border-old-paper-yellow/30 bg-deep-charcoal/50 text-off-white placeholder:text-off-white/40 rounded-md focus:outline-none focus:ring-2 focus:ring-old-paper-yellow/50 focus:border-old-paper-yellow disabled:opacity-50"
                     />
                     <button
                       onClick={handleSendMessage}
                       disabled={!chatInput.trim() || isSending}
-                      className="px-4 py-2 bg-old-paper-yellow hover:bg-old-paper-yellow/90 text-deep-charcoal font-semibold rounded-md disabled:bg-off-white/20 disabled:text-off-white/40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                      className="px-4 py-2 bg-old-paper-yellow hover:bg-old-paper-yellow/90 text-deep-charcoal font-semibold rounded-md disabled:bg-off-white/20 disabled:text-off-white/40 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
                     >
                       <Send className="h-4 w-4" />
                       Send
@@ -593,10 +724,10 @@ export default function DocumentDetailPage() {
             </div>
           )}
 
-          {/* Third Col - PDF Viewer (always in DOM when PDF exists) */}
+          {/* PDF Viewer */}
           {document.pdf_url && (
             <div
-              className="transition-all duration-700 ease-in-out min-w-0 overflow-hidden"
+              className="transition-all duration-500 ease-in-out min-w-0 overflow-hidden"
               style={{
                 flex: showPDF
                   ? showChat
@@ -604,12 +735,12 @@ export default function DocumentDetailPage() {
                     : "0 0 calc(80% - 16px)"
                   : "0 0 0px",
                 opacity: showPDF ? 1 : 0,
-                transform: showPDF ? "translateX(0)" : "translateX(20px)",
+                visibility: showPDF ? "visible" : "hidden",
               }}
             >
               <iframe
                 src={`${API_BASE_URL}/${document.pdf_url}`}
-                className="w-full h-full border border-off-white/20 rounded-lg bg-white"
+                className="w-full h-full border border-muted-teal/30 rounded-lg bg-white"
                 title="PDF Viewer"
               />
             </div>

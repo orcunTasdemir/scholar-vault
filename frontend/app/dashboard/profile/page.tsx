@@ -6,6 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import Image from "next/image";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://10.0.0.53:3000";
+
 export default function ProfilePage() {
   const router = useRouter();
   const { user, token, isLoading, logout, setUser } = useAuth();
@@ -130,26 +132,26 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen ">
-      <header className="border-b border-gray-100/20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex w-full max-w-full items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Image
-                src="/logo.png"
-                alt="ScholarVault Logo"
-                width={40}
-                height={40}
-              />
-              <h1 className="text-2xl font-bold text-gray-900">
-                Profile Settings
-              </h1>
-            </div>
+      {/* Header - Compact */}
+      <header className="bg-deep-charcoal/90 backdrop-blur-sm border-b border-off-white/10 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => router.push("/dashboard")}
-              className="ml-auto px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+              className="text-muted-teal hover:text-muted-teal/80 flex items-center gap-1 transition-colors text-sm"
             >
-              Back to Dashboard
+              ← Back to Dashboard
             </button>
+            <div className="h-8 w-px bg-off-white/20"></div>
+            <Image
+              src="/logo.png"
+              alt="ScholarVault Logo"
+              width={40}
+              height={40}
+            />
+            <h1 className="text-lg font-bold text-off-white font-logo truncate">
+              Profile Settings
+            </h1>
           </div>
         </div>
       </header>
@@ -173,10 +175,10 @@ export default function ProfilePage() {
             Profile Image
           </h2>
           <div className="flex items-start gap-6">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               {profileImage ? (
                 <Image
-                  src={`http://10.0.0.53:3000/${profileImage}`}
+                  src={`${API_BASE_URL}/${profileImage}`}
                   alt="Profile"
                   width={120}
                   height={120}

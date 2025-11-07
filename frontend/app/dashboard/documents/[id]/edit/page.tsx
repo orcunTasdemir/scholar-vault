@@ -167,23 +167,24 @@ export default function EditDocumentPage() {
       className="min-h-screen bg-cover bg-center bg-fixed"
       style={{ backgroundImage: "url('/background.png')" }}
     >
-      {/* Header */}
+      {/* Header - Compact */}
       <header className="bg-deep-charcoal/90 backdrop-blur-sm border-b border-off-white/10 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button
-            onClick={() => router.push(`/dashboard/documents/${documentId}`)}
-            className="text-muted-teal hover:text-muted-teal/80 mb-2 flex items-center gap-1 transition-colors"
-          >
-            ← Back to Document
-          </button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push(`/dashboard/documents/${documentId}`)}
+              className="text-muted-teal hover:text-muted-teal/80 flex items-center gap-1 transition-colors text-sm"
+            >
+              ← Back to Document
+            </button>
+            <div className="h-4 w-px bg-off-white/20"></div>
             <Image
               src="/logo.png"
               alt="ScholarVault Logo"
-              width={40}
-              height={40}
+              width={28}
+              height={28}
             />
-            <h1 className="text-2xl font-bold text-off-white font-logo">
+            <h1 className="text-lg font-bold text-off-white font-logo truncate">
               Edit Document
             </h1>
           </div>

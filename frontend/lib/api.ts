@@ -49,6 +49,10 @@ export interface Collection {
     updated_at: string;
 }
 
+export interface SearchResult extends Document {
+    matched_fields: string[];
+}
+
 
 export interface SubscriptionInfo {
     tier: 'student' | 'researcher' | 'academic' | 'scholar';
@@ -130,15 +134,31 @@ class ApiClient {
     }
 
 
-    async searchDocuments(token: string, query: string): Promise<Document[]> {
-        const response = await fetch(`${API_BASE_URL}/api/documents/search?q=${encodeURIComponent(query)}`, {
-            headers: this.getHeaders(token),
-        });
+    async searchDocuments(token: string, query: string, collectionId?: string | null): Promise<SearchResult[]> {
+        const params = new URLSearchParams({ q: query });
+        if (collectionId) {
+            params.append('collection_id', collectionId);
+        }
+
+        const url = `${API_BASE_URL}/api/documents/search?${params.toString()}`;
+        console.log('[api.searchDocuments] Fetching:', url, 'collectionId:', collectionId);
+
+        const response = await fetch(
+            url,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
 
         if (!response.ok) {
-            throw new Error('Failed to search documents');
+            throw new Error("Failed to search documents");
         }
-        return response.json();
+
+        const results = await response.json();
+        console.log('[api.searchDocuments] Response:', results.length, 'results');
+        return results;
     }
 
 

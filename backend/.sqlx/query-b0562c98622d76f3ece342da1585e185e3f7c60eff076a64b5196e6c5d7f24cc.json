@@ -1,0 +1,132 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                d.id, d.user_id, d.title, d.authors, d.year, d.publication_type, d.journal,\n                d.volume, d.issue, d.pages, d.publisher, d.doi, d.url, d.abstract_text,\n                d.keywords, d.pdf_url, d.created_at, d.updated_at,\n                ARRAY_REMOVE(ARRAY[\n                    CASE WHEN word_similarity($2, COALESCE(d.title, '')) > 0.3 THEN 'title' END,\n                    CASE WHEN word_similarity($2, COALESCE(d.abstract_text, '')) > 0.3 THEN 'abstract' END,\n                    CASE WHEN word_similarity($2, COALESCE(d.journal, '')) > 0.3 THEN 'journal' END,\n                    CASE WHEN EXISTS (SELECT 1 FROM unnest(d.authors) AS author WHERE word_similarity($2, author) > 0.3) THEN 'authors' END,\n                    CASE WHEN EXISTS (SELECT 1 FROM unnest(d.keywords) AS keyword WHERE word_similarity($2, keyword) > 0.3) THEN 'keywords' END\n                ], NULL) as \"matched_fields!\"\n            FROM documents d\n            INNER JOIN document_collections cd ON d.id = cd.document_id\n            WHERE d.user_id = $1\n            AND cd.collection_id = $3\n            AND (\n                word_similarity($2, COALESCE(d.title, '')) > 0.3\n                OR word_similarity($2, COALESCE(d.abstract_text, '')) > 0.3\n                OR word_similarity($2, COALESCE(d.journal, '')) > 0.3\n                OR EXISTS (SELECT 1 FROM unnest(d.authors) AS author WHERE word_similarity($2, author) > 0.3)\n                OR EXISTS (SELECT 1 FROM unnest(d.keywords) AS keyword WHERE word_similarity($2, keyword) > 0.3)\n            )\n            ORDER BY\n                GREATEST(\n                    word_similarity($2, COALESCE(d.title, '')),\n                    word_similarity($2, COALESCE(d.abstract_text, '')),\n                    word_similarity($2, COALESCE(d.journal, ''))\n                ) DESC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "authors",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 4,
+        "name": "year",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "publication_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "journal",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "volume",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "issue",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "pages",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "publisher",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "doi",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "abstract_text",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 14,
+        "name": "keywords",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 15,
+        "name": "pdf_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 16,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 17,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 18,
+        "name": "matched_fields!",
+        "type_info": "TextArray"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "b0562c98622d76f3ece342da1585e185e3f7c60eff076a64b5196e6c5d7f24cc"
+}

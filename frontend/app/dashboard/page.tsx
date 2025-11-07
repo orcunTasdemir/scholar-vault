@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { api, Document, Collection } from "@/lib/api";
+import { api, Collection, SearchResult } from "@/lib/api";
 import Image from "next/image";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
-import { AppHeader } from "@/components/layout/AppHeader";
+import AppHeader from "@/components/layout/AppHeader";
 import { FolderTree } from "@/components/FolderTree";
 import { DocumentGrid } from "@/components/documents/DocumentGrid";
 import { CreateFolderDialog } from "@/components/dialog/CreateFolderDialog";
@@ -23,33 +23,47 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { FileUp } from "lucide-react";
 import { toast } from "sonner";
+import { useDocuments } from "@/hooks/useDocuments";
+import { useCollections } from "@/hooks/useCollections";
+import { useSearch } from "@/hooks/useSearch";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://10.0.0.53:3000";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, token, isLoading: authLoading, logout } = useAuth();
 
-  // Document state
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Custom hooks
+  const { documents, isLoading, setDocuments, deleteDocument: deleteDoc } = useDocuments(token, user);
+  const {
+    collections,
+    selectedCollectionId,
+    selectedCollection,
+    collectionDocuments,
+    isLoadingCollectionDocs,
+    setCollectionDocuments,
+    createCollection,
+    updateCollection,
+    deleteCollection,
+    addDocumentToCollection: addToCollection,
+    removeDocumentFromCollection: removeFromCollection,
+    selectCollection,
+  } = useCollections(token);
+  const {
+    searchQuery,
+    searchResults,
+    isSearching,
+    handleSearch,
+    setSearchQuery,
+    setSearchResults,
+    setIsSearching,
+  } = useSearch(token);
+
+  // Upload state
   const [uploadError, setUploadError] = useState("");
   const [uploadStatus, setUploadStatus] = useState<
     "idle" | "uploading" | "extracting" | "success"
   >("idle");
-
-  // Collection state
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [selectedCollectionId, setSelectedCollectionId] = useState<
-    string | null
-  >(null);
-  const [collectionDocuments, setCollectionDocuments] = useState<Document[]>(
-    []
-  );
-  const [isLoadingCollectionDocs, setIsLoadingCollectionDocs] = useState(false);
-
-  // Search State
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [searchResults, setSearchResults] = useState<Document[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
 
   // Dialog state
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
@@ -68,72 +82,11 @@ export default function DashboardPage() {
     }
   }, [authLoading, user, router]);
 
-  // Fetch documents
-  useEffect(() => {
-    const fetchDocuments = async () => {
-      if (!token) return;
-
-      try {
-        const docs = await api.getDocuments(token);
-        setDocuments(docs);
-      } catch (error) {
-        console.error("Failed to fetch documents:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (user && token) {
-      fetchDocuments();
-    }
-  }, [user, token]);
-
-  // Fetch collections
-  useEffect(() => {
-    const fetchCollections = async () => {
-      if (!token) return;
-
-      try {
-        const cols = await api.getCollections(token);
-        setCollections(cols);
-      } catch (error) {
-        console.error("Failed to fetch collections:", error);
-      }
-    };
-
-    fetchCollections();
-  }, [token]);
-
-  // Fetch collection documents when collection is selected
-  useEffect(() => {
-    const fetchCollectionDocuments = async () => {
-      if (!token || selectedCollectionId === null) {
-        setCollectionDocuments([]);
-        return;
-      }
-
-      setIsLoadingCollectionDocs(true);
-      try {
-        const docs = await api.getCollectionDocuments(
-          token,
-          selectedCollectionId
-        );
-        setCollectionDocuments(docs);
-      } catch (error) {
-        console.error("Failed to fetch collection documents:", error);
-      } finally {
-        setIsLoadingCollectionDocs(false);
-      }
-    };
-
-    fetchCollectionDocuments();
-  }, [selectedCollectionId, token]);
-
+  // Handle subscription success/cancel query parameters
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("success") === "true") {
       toast.success("Subscription activated! Welcome aboard.");
-      // Clear the parameter
       window.history.replaceState({}, "", "/dashboard");
     }
     if (params.get("canceled") === "true") {
@@ -152,10 +105,6 @@ export default function DashboardPage() {
     ? documents
     : collectionDocuments;
 
-  const selectedCollection = collections.find(
-    (c) => c.id === selectedCollectionId
-  );
-
   // Handler: Upload PDF
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -170,16 +119,13 @@ export default function DashboardPage() {
     formData.append("file", file);
 
     try {
-      const response = await fetch(
-        "http://10.0.0.53:3000/api/documents/upload",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/documents/upload`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -226,16 +172,7 @@ export default function DashboardPage() {
 
   // Handler: Create folder
   const handleCreateFolder = async (name: string) => {
-    if (!token) return;
-
-    try {
-      const newCollection = await api.createCollection(token, name, null);
-      setCollections((prev) => [...prev, newCollection]);
-      toast.success(`Collection "${name}" created`);
-    } catch (error) {
-      console.error("Failed to create folder:", error);
-      toast.error("Failed to create collection");
-    }
+    await createCollection(name);
   };
 
   // Handler: Rename folder (open dialog)
@@ -249,24 +186,8 @@ export default function DashboardPage() {
 
   // Handler: Confirm rename
   const handleConfirmRename = async (newName: string) => {
-    if (!token || !folderToRename) return;
-
-    try {
-      const updatedCollection = await api.updateCollection(
-        token,
-        folderToRename.id,
-        {
-          name: newName,
-        }
-      );
-      setCollections((prev) =>
-        prev.map((c) => (c.id === folderToRename.id ? updatedCollection : c))
-      );
-      toast.success(`Collection renamed to "${newName}"`);
-    } catch (error) {
-      console.error("Failed to rename folder:", error);
-      toast.error("Failed to rename collection");
-    }
+    if (!folderToRename) return;
+    await updateCollection(folderToRename.id, newName);
   };
 
   // Handler: Delete folder (open dialog)
@@ -280,49 +201,13 @@ export default function DashboardPage() {
 
   // Handler: Confirm delete
   const handleConfirmDelete = async () => {
-    if (!token || !folderToDelete) return;
-
-    try {
-      await api.deleteCollection(token, folderToDelete.id);
-      setCollections((prev) => prev.filter((c) => c.id !== folderToDelete.id));
-      if (selectedCollectionId === folderToDelete.id) {
-        setSelectedCollectionId(null);
-      }
-      toast.success(`Collection "${folderToDelete.name}" deleted`);
-    } catch (error) {
-      console.error("Failed to delete folder:", error);
-      toast.error("Failed to delete collection");
-    }
-  };
-
-  // Search Handler
-  const handleSearch = async (query: string) => {
-    if (!token) return;
-
-    setSearchQuery(query);
-
-    if (!query.trim()) {
-      // clear search
-      setSearchResults([]);
-      setIsSearching(false);
-      return;
-    }
-
-    setIsSearching(true);
-
-    try {
-      const results = await api.searchDocuments(token, query);
-      setSearchResults(results);
-    } catch (error) {
-      console.error("Search error: ", error);
-      toast.error("Failed to search documents");
-      setSearchResults([]);
-    }
+    if (!folderToDelete) return;
+    await deleteCollection(folderToDelete.id, folderToDelete.name);
   };
 
   // Handler: Select collection
   const handleSelectCollection = (collectionId: string | null) => {
-    setSelectedCollectionId(collectionId);
+    selectCollection(collectionId);
     setSearchQuery("");
     setSearchResults([]);
     setIsSearching(false);
@@ -333,60 +218,23 @@ export default function DashboardPage() {
     documentId: string,
     collectionId: string
   ) => {
-    if (!token) return;
-
-    try {
-      await api.addDocumentToCollection(token, collectionId, documentId);
-
-      // Find collection name for toast
-      const collection = collections.find((c) => c.id === collectionId);
-      if (collection) {
-        toast.success(`Successfully added to "${collection.name}"`);
-      }
-
-      if (selectedCollectionId === collectionId) {
-        const docs = await api.getCollectionDocuments(token, collectionId);
-        setCollectionDocuments(docs);
-      }
-    } catch (error) {
-      console.error("Failed to add document to collection:", error);
-      toast.error("Failed to add document to collection");
-    }
+    await addToCollection(collectionId, documentId);
   };
 
   // Handler: Remove from collection
   const handleRemoveFromCollection = async (documentId: string) => {
-    if (!selectedCollectionId || !token) return;
-
-    try {
-      await api.removeDocumentFromCollection(
-        token,
-        selectedCollectionId,
-        documentId
-      );
-      setCollectionDocuments((prev) =>
-        prev.filter((doc) => doc.id !== documentId)
-      );
-      toast.success("Document removed from collection");
-    } catch (error) {
-      console.error("Remove from collection error:", error);
-      toast.error("Failed to remove document from collection");
-    }
+    await removeFromCollection(documentId);
   };
 
   // Handler: Delete document
   const handleDeleteDocument = async (documentId: string) => {
-    if (!token) return;
-
     try {
-      await api.deleteDocument(token, documentId);
-      setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
+      await deleteDoc(documentId);
       setCollectionDocuments((prev) =>
         prev.filter((doc) => doc.id !== documentId)
       );
       toast.success("Document deleted permanently");
-    } catch (error) {
-      console.error("Delete error:", error);
+    } catch {
       toast.error("Failed to delete document");
     }
   };
@@ -400,6 +248,8 @@ export default function DashboardPage() {
         onCreateFolder={() => setCreateFolderOpen(true)}
         onSearch={handleSearch}
         onLogout={logout}
+        selectedCollectionId={selectedCollectionId}
+        selectedCollectionName={selectedCollection?.name}
       />
       {/* Sidebar + Main Content */}
       <div className="flex-1 flex overflow-hidden h-[calc(100vh-4rem)]">
@@ -476,6 +326,7 @@ export default function DashboardPage() {
               onAddToCollection={handleAddToCollection}
               onRemoveFromCollection={handleRemoveFromCollection}
               onDelete={handleDeleteDocument}
+              searchResults={isSearching ? searchResults : undefined}
             />
           </div>
         </main>

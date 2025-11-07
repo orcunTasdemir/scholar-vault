@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import {
-  Geist,
   Geist_Mono,
-  Inter,
   Goudy_Bookletter_1911,
+  Lora,
+  Source_Sans_3,
 } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -15,16 +15,17 @@ export const logoFont = Goudy_Bookletter_1911({
   weight: "400",
 });
 
-export const displayFont = Inter({
+export const displayFont = Lora({
   variable: "--font-display",
   weight: ["600", "700"],
   subsets: ["latin"],
   display: "swap",
 });
 
-const geistSans = Geist({
+const geistSans = Source_Sans_3({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const geistMono = Geist_Mono({

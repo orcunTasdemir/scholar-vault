@@ -18,6 +18,7 @@ use crate::{
 #[derive(serde::Deserialize)]
 pub struct SearchQuery {
     pub q: String,
+    pub collection_id: Option<String>,
 }
 
 #[derive(serde::Deserialize)]
@@ -1246,12 +1247,19 @@ pub async fn get_collection_documents(
     Ok(Json(documents))
 }
 
+#[derive(serde::Serialize)]
+pub struct SearchResult {
+    #[serde(flatten)]
+    pub document: Document,
+    pub matched_fields: Vec<String>,
+}
+
 // Add this handler function after get_user_documents
 pub async fn search_documents(
     AuthUser(claims): AuthUser,
     State(state): State<AppState>,
     Query(params): Query<SearchQuery>,
-) -> Result<Json<Vec<Document>>, (StatusCode, Json<Value>)> {
+) -> Result<Json<Vec<SearchResult>>, (StatusCode, Json<Value>)> {
     let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
         (
             StatusCode::BAD_REQUEST,
@@ -1259,45 +1267,148 @@ pub async fn search_documents(
         )
     })?;
 
-    let search_pattern = params.q.clone(); // No need for % wildcards with fuzzy search
+    let search_pattern = params.q.clone();
+    let collection_id = params.collection_id.as_ref().and_then(|id| uuid::Uuid::parse_str(id).ok());
 
-    let documents = sqlx::query_as!(
-    Document,
-    r#"
-    SELECT id, user_id, title, authors, year, publication_type, journal,
-        volume, issue, pages, publisher, doi, url, abstract_text,
-        keywords, pdf_url, created_at, updated_at
-    FROM documents
-    WHERE user_id = $1
-    AND (
-        word_similarity($2, COALESCE(title, '')) > 0.3
-        OR word_similarity($2, COALESCE(abstract_text, '')) > 0.3
-        OR word_similarity($2, COALESCE(journal, '')) > 0.3
-        OR EXISTS (SELECT 1 FROM unnest(authors) AS author WHERE word_similarity($2, author) > 0.3)
-        OR EXISTS (SELECT 1 FROM unnest(keywords) AS keyword WHERE word_similarity($2, keyword) > 0.3)
-    )
-    ORDER BY 
-        GREATEST(
-            word_similarity($2, COALESCE(title, '')),
-            word_similarity($2, COALESCE(abstract_text, '')),
-            word_similarity($2, COALESCE(journal, ''))
-        ) DESC,
-        created_at DESC
-    "#,
-    user_id,
-    search_pattern
-)
-.fetch_all(&state.db)
-.await
-.map_err(|e| {
-    eprintln!("Search query error: {}", e);
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(json!({"error": "Failed to search documents"})),
-    )
-})?;
+    // Struct for query results
+    #[derive(sqlx::FromRow)]
+    struct SearchRow {
+        id: uuid::Uuid,
+        user_id: uuid::Uuid,
+        title: String,
+        authors: Option<Vec<String>>,
+        year: Option<i32>,
+        publication_type: Option<String>,
+        journal: Option<String>,
+        volume: Option<String>,
+        issue: Option<String>,
+        pages: Option<String>,
+        publisher: Option<String>,
+        doi: Option<String>,
+        url: Option<String>,
+        abstract_text: Option<String>,
+        keywords: Option<Vec<String>>,
+        pdf_url: Option<String>,
+        created_at: chrono::DateTime<chrono::Utc>,
+        updated_at: chrono::DateTime<chrono::Utc>,
+        matched_fields: Vec<String>,
+    }
 
-    Ok(Json(documents))
+    // Get documents with match information
+    let rows: Vec<SearchRow> = if let Some(coll_id) = collection_id {
+        // Search within a specific collection
+        sqlx::query_as!(
+            SearchRow,
+            r#"
+            SELECT
+                d.id, d.user_id, d.title, d.authors, d.year, d.publication_type, d.journal,
+                d.volume, d.issue, d.pages, d.publisher, d.doi, d.url, d.abstract_text,
+                d.keywords, d.pdf_url, d.created_at, d.updated_at,
+                ARRAY_REMOVE(ARRAY[
+                    CASE WHEN word_similarity($2, COALESCE(d.title, '')) > 0.3 THEN 'title' END,
+                    CASE WHEN word_similarity($2, COALESCE(d.abstract_text, '')) > 0.3 THEN 'abstract' END,
+                    CASE WHEN word_similarity($2, COALESCE(d.journal, '')) > 0.3 THEN 'journal' END,
+                    CASE WHEN EXISTS (SELECT 1 FROM unnest(d.authors) AS author WHERE word_similarity($2, author) > 0.3) THEN 'authors' END,
+                    CASE WHEN EXISTS (SELECT 1 FROM unnest(d.keywords) AS keyword WHERE word_similarity($2, keyword) > 0.3) THEN 'keywords' END
+                ], NULL) as "matched_fields!"
+            FROM documents d
+            INNER JOIN document_collections cd ON d.id = cd.document_id
+            WHERE d.user_id = $1
+            AND cd.collection_id = $3
+            AND (
+                word_similarity($2, COALESCE(d.title, '')) > 0.3
+                OR word_similarity($2, COALESCE(d.abstract_text, '')) > 0.3
+                OR word_similarity($2, COALESCE(d.journal, '')) > 0.3
+                OR EXISTS (SELECT 1 FROM unnest(d.authors) AS author WHERE word_similarity($2, author) > 0.3)
+                OR EXISTS (SELECT 1 FROM unnest(d.keywords) AS keyword WHERE word_similarity($2, keyword) > 0.3)
+            )
+            ORDER BY
+                GREATEST(
+                    word_similarity($2, COALESCE(d.title, '')),
+                    word_similarity($2, COALESCE(d.abstract_text, '')),
+                    word_similarity($2, COALESCE(d.journal, ''))
+                ) DESC
+            "#,
+            user_id,
+            search_pattern,
+            coll_id
+        )
+        .fetch_all(&state.db)
+        .await
+    } else {
+        // Search all documents
+        sqlx::query_as!(
+            SearchRow,
+            r#"
+            SELECT
+                d.id, d.user_id, d.title, d.authors, d.year, d.publication_type, d.journal,
+                d.volume, d.issue, d.pages, d.publisher, d.doi, d.url, d.abstract_text,
+                d.keywords, d.pdf_url, d.created_at, d.updated_at,
+                ARRAY_REMOVE(ARRAY[
+                    CASE WHEN word_similarity($2, COALESCE(d.title, '')) > 0.3 THEN 'title' END,
+                    CASE WHEN word_similarity($2, COALESCE(d.abstract_text, '')) > 0.3 THEN 'abstract' END,
+                    CASE WHEN word_similarity($2, COALESCE(d.journal, '')) > 0.3 THEN 'journal' END,
+                    CASE WHEN EXISTS (SELECT 1 FROM unnest(d.authors) AS author WHERE word_similarity($2, author) > 0.3) THEN 'authors' END,
+                    CASE WHEN EXISTS (SELECT 1 FROM unnest(d.keywords) AS keyword WHERE word_similarity($2, keyword) > 0.3) THEN 'keywords' END
+                ], NULL) as "matched_fields!"
+            FROM documents d
+            WHERE d.user_id = $1
+            AND (
+                word_similarity($2, COALESCE(d.title, '')) > 0.3
+                OR word_similarity($2, COALESCE(d.abstract_text, '')) > 0.3
+                OR word_similarity($2, COALESCE(d.journal, '')) > 0.3
+                OR EXISTS (SELECT 1 FROM unnest(d.authors) AS author WHERE word_similarity($2, author) > 0.3)
+                OR EXISTS (SELECT 1 FROM unnest(d.keywords) AS keyword WHERE word_similarity($2, keyword) > 0.3)
+            )
+            ORDER BY
+                GREATEST(
+                    word_similarity($2, COALESCE(d.title, '')),
+                    word_similarity($2, COALESCE(d.abstract_text, '')),
+                    word_similarity($2, COALESCE(d.journal, ''))
+                ) DESC
+            "#,
+            user_id,
+            search_pattern
+        )
+        .fetch_all(&state.db)
+        .await
+    }
+    .map_err(|e| {
+        eprintln!("Database error during search: {:?}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Database error"})),
+        )
+    })?;
+
+    let results: Vec<SearchResult> = rows
+        .into_iter()
+        .map(|row| SearchResult {
+            document: Document {
+                id: row.id,
+                user_id: row.user_id,
+                title: row.title,
+                authors: row.authors,
+                year: row.year,
+                publication_type: row.publication_type,
+                journal: row.journal,
+                volume: row.volume,
+                issue: row.issue,
+                pages: row.pages,
+                publisher: row.publisher,
+                doi: row.doi,
+                url: row.url,
+                abstract_text: row.abstract_text,
+                keywords: row.keywords,
+                pdf_url: row.pdf_url,
+                created_at: row.created_at,
+                updated_at: row.updated_at,
+            },
+            matched_fields: row.matched_fields,
+        })
+        .collect();
+
+    Ok(Json(results))
 }
 
 pub async fn chat_with_document(

@@ -1,6 +1,6 @@
 "use client";
 
-import { Document, Collection } from "@/lib/api";
+import { Document, Collection, SearchResult } from "@/lib/api";
 import { DocumentCard } from "./DocumentCard";
 import Image from "next/image";
 
@@ -13,6 +13,7 @@ interface DocumentGridProps {
   onAddToCollection: (documentId: string, collectionId: string) => void;
   onRemoveFromCollection: (documentId: string) => void;
   onDelete: (documentId: string) => void;
+  searchResults?: SearchResult[]; // NEW
 }
 
 export function DocumentGrid({
@@ -24,6 +25,7 @@ export function DocumentGrid({
   onAddToCollection,
   onRemoveFromCollection,
   onDelete,
+  searchResults,
 }: DocumentGridProps) {
   // Loading state
   if (isLoading) {
@@ -70,18 +72,25 @@ export function DocumentGrid({
   // Grid of documents
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {documents.map((doc) => (
-        <DocumentCard
-          key={doc.id}
-          document={doc}
-          collections={collections}
-          selectedCollectionId={selectedCollectionId}
-          selectedCollectionName={selectedCollectionName}
-          onAddToCollection={onAddToCollection}
-          onRemoveFromCollection={onRemoveFromCollection}
-          onDelete={onDelete}
-        />
-      ))}
+      {documents.map((doc) => {
+        const matchedFields = searchResults?.find(
+          (r) => r.id === doc.id
+        )?.matched_fields;
+
+        return (
+          <DocumentCard
+            key={doc.id}
+            document={doc}
+            collections={collections}
+            selectedCollectionId={selectedCollectionId}
+            selectedCollectionName={selectedCollectionName}
+            onAddToCollection={onAddToCollection}
+            onRemoveFromCollection={onRemoveFromCollection}
+            onDelete={onDelete}
+            matchedFields={matchedFields}
+          />
+        );
+      })}
     </div>
   );
 }

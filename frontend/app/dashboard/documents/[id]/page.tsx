@@ -1,7 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
-import { Send, MessageSquare, Copy, ChevronDown } from "lucide-react";
+import { Send, MessageSquare, Copy } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -246,7 +246,7 @@ export default function DocumentDetailPage() {
       </header>
 
       {/* Main Content */}
-      <main className="w-screen px-4 sm:px-6 lg:px-8 py-4 h-[calc(100vh-4rem)]">
+      <main className="w-screen px-2 sm:px-2 lg:px-2 py-2 h-[calc(100vh-3rem)]">
         <div className="w-full h-full mx-auto rounded-lg bg-deep-charcoal/80 backdrop-blur-sm border border-off-white/10 p-6 flex flex-row gap-1 overflow-hidden">
           {/* First Col - Metadata */}
           <div
@@ -415,7 +415,7 @@ export default function DocumentDetailPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="mt-8 flex flex-wrap gap-1">
+            <div className="mt-4 flex flex-wrap gap-1">
               <button
                 onClick={() =>
                   router.push(`/dashboard/documents/${documentId}/edit`)
@@ -454,13 +454,13 @@ export default function DocumentDetailPage() {
               )}
             </div>
             {/* Citation Exporter */}
-            <div className="mt-6 space-y-3">
+            <div className="mt-4 space-y-3 pr-2">
               <label className="block text-sm font-medium text-muted-teal">
                 Export Citation
               </label>
 
               {/* Format Dropdown */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 max-w-18">
                 <select
                   value={citationFormat}
                   onChange={(e) =>
@@ -478,7 +478,7 @@ export default function DocumentDetailPage() {
 
               {/* Citation Display Box */}
               {generatedCitation && (
-                <div className="relative">
+                <div className="relative max-w-200">
                   <div className="p-4 bg-off-white/5 border border-off-white/20 rounded-lg text-off-white text-sm font-mono whitespace-pre-wrap break-words">
                     {generatedCitation}
                   </div>

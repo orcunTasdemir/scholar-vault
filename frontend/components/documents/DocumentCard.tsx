@@ -20,7 +20,9 @@ import {
   User,
   FileText,
   FolderMinus,
+  Search,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 
 interface DocumentCardProps {
@@ -31,6 +33,7 @@ interface DocumentCardProps {
   onAddToCollection: (documentId: string, collectionId: string) => void;
   onRemoveFromCollection: (documentId: string) => void;
   onDelete: (documentId: string) => void;
+  matchedFields?: string[];
 }
 
 export function DocumentCard({
@@ -41,6 +44,7 @@ export function DocumentCard({
   onAddToCollection,
   onRemoveFromCollection,
   onDelete,
+  matchedFields,
 }: DocumentCardProps) {
   const router = useRouter();
   const isInCollection = selectedCollectionId !== null;
@@ -70,6 +74,24 @@ export function DocumentCard({
             <h3 className="font-semibold line-clamp-2 mb-2 min-h-[2.5rem]">
               {document.title}
             </h3>
+            {/* Match Indicators - NEW */}
+            {matchedFields && matchedFields.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-2">
+                {matchedFields.map((field) => (
+                  <span
+                    key={field}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-old-paper-yellow/20 text-old-paper-yellow border border-old-paper-yellow/30 rounded text-xs font-medium"
+                  >
+                    <Search className="w-3 h-3" />
+                    {field === "title" && "Title"}
+                    {field === "authors" && "Authors"}
+                    {field === "keywords" && "Keywords"}
+                    {field === "abstract" && "Abstract"}
+                    {field === "journal" && "Journal"}
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="flex flex-col gap-1 text-xs text-off-white/70">
               {document.authors && document.authors.length > 0 && (
                 <div className="flex items-center gap-1.5 min-h-[1.25rem]">
@@ -124,6 +146,7 @@ export function DocumentCard({
               }}
               className="text-old-paper-yellow hover:text-old-paper-yellow hover:bg-old-paper-yellow/20"
               title="Remove from collection"
+              aria-label="Remove from collection"
             >
               <FolderMinus className="w-4 h-4" />
             </Button>
@@ -136,6 +159,7 @@ export function DocumentCard({
               }}
               className="text-destructive hover:text-destructive hover:bg-destructive/20"
               title="Delete document"
+              aria-label="Delete document"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -150,6 +174,7 @@ export function DocumentCard({
                   onClick={(e) => e.stopPropagation()}
                   className="text-off-white hover:bg-muted-teal/20 hover:text-muted-teal"
                   title="Add to collection"
+                  aria-label="Add to collection"
                 >
                   <FolderPlus className="w-4 h-4" />
                 </Button>
@@ -173,6 +198,7 @@ export function DocumentCard({
               }}
               className="text-destructive hover:text-destructive hover:bg-destructive/20"
               title="Delete document"
+              aria-label="Delete document"
             >
               <Trash2 className="w-4 h-4" />
             </Button>

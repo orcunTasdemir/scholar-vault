@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, SubscriptionInfo } from "@/lib/api";
 import { toast } from "sonner";
+import Image from "next/image";
 
 export default function SubscriptionPage() {
   const { user, token, isLoading: authLoading } = useAuth();
@@ -125,6 +126,29 @@ export default function SubscriptionPage() {
       className="min-h-screen bg-cover bg-center bg-fixed"
       style={{ backgroundImage: "url('/background.png')" }}
     >
+      {/* Header - Compact */}
+      <header className="bg-deep-charcoal/90 backdrop-blur-sm border-b border-off-white/10 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="text-muted-teal hover:text-muted-teal/80 flex items-center gap-1 transition-colors text-sm"
+            >
+              ← Back to Dashboard
+            </button>
+            <div className="h-8 w-px bg-off-white/20"></div>
+            <Image
+              src="/logo.png"
+              alt="ScholarVault Logo"
+              width={40}
+              height={40}
+            />
+            <h1 className="text-lg font-bold text-off-white font-logo truncate">
+              Subscription Plans
+            </h1>
+          </div>
+        </div>
+      </header>
       <div className="max-w-7xl mx-auto p-6">
         {/* Current Subscription Status */}
         {subscriptionInfo && (

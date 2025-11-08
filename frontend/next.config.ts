@@ -11,6 +11,16 @@ const nextConfig: NextConfig = {
         port: '3000',
         pathname: '/uploads/**',
       },
+      {
+        protocol: 'https',
+        hostname: '*.up.railway.app',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.fly.dev',
+        pathname: '/uploads/**',
+      },
     ],
   },
 };

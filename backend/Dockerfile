@@ -3,8 +3,8 @@ FROM rust:latest AS builder
 
 WORKDIR /app
 
-# Install sqlx-cli for migrations
-RUN cargo install sqlx-cli --no-default-features --features postgres
+# Install sqlx-cli for migrations with TLS support
+RUN cargo install sqlx-cli --no-default-features --features postgres,rustls
 
 # Copy everything
 COPY . .

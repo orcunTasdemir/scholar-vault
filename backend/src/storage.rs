@@ -74,46 +74,111 @@ impl SupabaseStorage {
 
     /// Generate a signed URL for temporary access to a private file
     /// expires_in: Duration in seconds (default: 3600 = 1 hour)
+    // pub async fn create_signed_url(
+    //     &self,
+    //     bucket: &str,
+    //     path: &str,
+    //     expires_in: u64,
+    // ) -> Result<String, String> {
+    //     eprintln!("Creating signed URL for bucket: {}, path: {}", bucket, path);
+    //     let signed_url_endpoint = format!(
+    //         "{}/storage/v1/object/sign/{}/{}",
+    //         self.url, bucket, path
+    //     );
+    //     eprintln!("Signed URL endpoint: {}", signed_url_endpoint);
+
+    //     let request_body = SignedUrlRequest { expires_in };
+
+    //     let response = self
+    //         .client
+    //         .post(&signed_url_endpoint)
+    //         .header("Authorization", format!("Bearer {}", self.service_role_key))
+    //         .header("Content-Type", "application/json")
+    //         .json(&request_body)
+    //         .send()
+    //         .await
+    //         .map_err(|e| format!("Signed URL request failed: {}", e))?;
+
+    //     if !response.status().is_success() {
+    //         let error_text = response
+    //             .text()
+    //             .await
+    //             .unwrap_or_else(|_| "Unknown error".to_string());
+    //         return Err(format!("Failed to create signed URL: {}", error_text));
+    //     }
+
+    //     let signed_response: SignedUrlResponse = response
+    //         .json()
+    //         .await
+    //         .map_err(|e| format!("Failed to parse signed URL response: {}", e))?;
+
+    //     // Construct full URL
+    //     let full_url = format!("{}{}", self.url, signed_response.signed_url);
+    //     eprintln!("full_url is: {}", full_url);
+    //     Ok(full_url)
+    // }
+
     pub async fn create_signed_url(
-        &self,
-        bucket: &str,
-        path: &str,
-        expires_in: u64,
-    ) -> Result<String, String> {
-        let signed_url_endpoint = format!(
-            "{}/storage/v1/object/sign/{}/{}",
-            self.url, bucket, path
-        );
+    &self,
+    bucket: &str,
+    path: &str,
+    expires_in: u64,
+) -> Result<String, String> {
+    eprintln!("Creating signed URL for bucket: {}, path: {}", bucket, path);
 
-        let request_body = SignedUrlRequest { expires_in };
+    // This is the endpoint to *request* a signed URL from Supabase
+    let signed_url_endpoint = format!(
+        "{}/storage/v1/object/sign/{}/{}",
+        self.url, bucket, path
+    );
+    eprintln!("Signed URL endpoint: {}", signed_url_endpoint);
 
-        let response = self
-            .client
-            .post(&signed_url_endpoint)
-            .header("Authorization", format!("Bearer {}", self.service_role_key))
-            .header("Content-Type", "application/json")
-            .json(&request_body)
-            .send()
+    let request_body = SignedUrlRequest { expires_in };
+
+    let response = self
+        .client
+        .post(&signed_url_endpoint)
+        .header("Authorization", format!("Bearer {}", self.service_role_key))
+        .header("Content-Type", "application/json")
+        .json(&request_body)
+        .send()
+        .await
+        .map_err(|e| format!("Signed URL request failed: {}", e))?;
+
+    if !response.status().is_success() {
+        let error_text = response
+            .text()
             .await
-            .map_err(|e| format!("Signed URL request failed: {}", e))?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(format!("Failed to create signed URL: {}", error_text));
-        }
-
-        let signed_response: SignedUrlResponse = response
-            .json()
-            .await
-            .map_err(|e| format!("Failed to parse signed URL response: {}", e))?;
-
-        // Construct full URL
-        let full_url = format!("{}{}", self.url, signed_response.signed_url);
-        Ok(full_url)
+            .unwrap_or_else(|_| "Unknown error".to_string());
+        return Err(format!("Failed to create signed URL: {}", error_text));
     }
+
+    let signed_response: SignedUrlResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse signed URL response: {}", e))?;
+
+    // Supabase sometimes returns `/object/sign/...` instead of `/storage/v1/object/sign/...`
+    let signed_path = if signed_response.signed_url.starts_with("/object/sign/") {
+        format!("/storage/v1{}", signed_response.signed_url)
+    } else if signed_response.signed_url.starts_with("http") {
+        // Already a full URL, no need to prepend anything
+        signed_response.signed_url.clone()
+    } else {
+        // Assume relative path that already includes /storage/v1 or similar
+        signed_response.signed_url.clone()
+    };
+
+    let full_url = if signed_path.starts_with("http") {
+        signed_path
+    } else {
+        format!("{}{}", self.url, signed_path)
+    };
+
+    eprintln!("Final signed URL: {}", full_url);
+    Ok(full_url)
+}
+
 
     /// Delete a file from Supabase Storage
     pub async fn delete_file(&self, bucket: &str, path: &str) -> Result<(), String> {

@@ -401,6 +401,7 @@ class ApiClient {
         }
     }
     async getDocumentSignedUrl(token: string, documentId: string): Promise<string> {
+        console.log("Here to create signed url to fetch from inside frontend")
         const response = await fetch(`${API_BASE_URL}/api/documents/${documentId}/signed-url`, {
             headers: this.getHeaders(token),
         });
@@ -409,6 +410,7 @@ class ApiClient {
             throw new Error('Failed to get signed URL');
         }
         const data = await response.json();
+        console.log("The signed url returned is: ", data.signed_url)
         return data.signed_url;
     }
 

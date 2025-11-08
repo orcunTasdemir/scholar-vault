@@ -53,6 +53,31 @@ pub struct UserResponse {
     pub email: String,
     pub username: Option<String>,
     pub profile_image_url: Option<String>,
+    pub subscription_tier: String,
+    pub subscription_status: String,
+    pub stripe_customer_id: Option<String>,
+    pub stripe_subscription_id: Option<String>,
+    pub subscription_start_date: Option<DateTime<Utc>>,
+    pub subscription_end_date: Option<DateTime<Utc>>,
+    pub trial_end_date: Option<DateTime<Utc>>,
+}
+
+impl From<User> for UserResponse {
+    fn from(user: User) -> Self {
+        UserResponse {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            profile_image_url: user.profile_image_url,
+            subscription_tier: user.subscription_tier,
+            subscription_status: user.subscription_status,
+            stripe_customer_id: user.stripe_customer_id,
+            stripe_subscription_id: user.stripe_subscription_id,
+            subscription_start_date: user.subscription_start_date,
+            subscription_end_date: user.subscription_end_date,
+            trial_end_date: user.trial_end_date,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

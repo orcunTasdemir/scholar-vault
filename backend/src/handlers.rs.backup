@@ -107,8 +107,7 @@ pub async fn login_user(
     Json(payload): Json<LoginRequest>,
 ) -> Result<(StatusCode, Json<LoginResponse>), (StatusCode, Json<Value>)> {
     // Find user
-    let user = sqlx::query_as!(
-        User,
+    let user = sqlx::query!(
         r#"
         SELECT id, email, password_hash, username, profile_image_url, created_at, updated_at,
                subscription_tier, subscription_status, stripe_customer_id, stripe_subscription_id,
@@ -161,7 +160,12 @@ pub async fn login_user(
         StatusCode::OK,
         Json(LoginResponse {
             token,
-            user: user.into(),
+            user: UserResponse {
+                id: user.id,
+                email: user.email,
+                username: user.username,
+                profile_image_url: user.profile_image_url,
+            },
         }),
     ))
 }
@@ -194,7 +198,12 @@ pub async fn get_current_user(
         )
     })?;
 
-    Ok(Json(user.into()))
+    Ok(Json(UserResponse {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        profile_image_url: user.profile_image_url,
+    }))
 }
 
 pub async fn create_document(
@@ -731,7 +740,12 @@ pub async fn upload_profile_image(
         )
     })?;
 
-    Ok(Json(updated_user.into()))
+    Ok(Json(UserResponse {
+        id: updated_user.id,
+        email: updated_user.email,
+        username: updated_user.username,
+        profile_image_url: updated_user.profile_image_url,
+    }))
 }
 
 pub async fn delete_profile_image(
@@ -787,7 +801,12 @@ pub async fn delete_profile_image(
         )
     })?;
 
-    Ok(Json(updated_user.into()))
+    Ok(Json(UserResponse {
+        id: updated_user.id,
+        email: updated_user.email,
+        username: updated_user.username,
+        profile_image_url: updated_user.profile_image_url,
+    }))
 }
 
 pub async fn update_profile(
@@ -821,7 +840,12 @@ pub async fn update_profile(
         )
     })?;
 
-    Ok(Json(updated_user.into()))
+    Ok(Json(UserResponse {
+        id: updated_user.id,
+        email: updated_user.email,
+        username: updated_user.username,
+        profile_image_url: updated_user.profile_image_url,
+    }))
 }
 
 pub async fn get_user_collections(

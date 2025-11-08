@@ -260,10 +260,8 @@ fn extract_text_from_pdf(pdf_path: &str) -> Result<String, String> {
     Ok(truncated.to_string())
 }
 
-pub fn extract_full_pdf_text(pdf_path: &str) -> Result<String, String> {
-    let bytes = std::fs::read(pdf_path).map_err(|e| format!("Failed to read PDF: {}", e))?;
-
-    let text = pdf_extract::extract_text_from_mem(&bytes)
+pub fn extract_full_pdf_text(pdf_bytes: &[u8]) -> Result<String, String> {
+    let text = pdf_extract::extract_text_from_mem(pdf_bytes)
         .map_err(|e| format!("Failed to extract text from PDF: {}", e))?;
 
     Ok(text)

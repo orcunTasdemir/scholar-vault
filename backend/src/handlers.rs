@@ -1479,15 +1479,28 @@ pub async fn chat_with_document(
         )
     })?;
 
-    let pdf_url = document.pdf_url.ok_or_else(|| {
+    let pdf_path = document.pdf_url.ok_or_else(|| {
         (
             StatusCode::BAD_REQUEST,
             Json(json!({"error": "Document has no PDF"})),
         )
     })?;
 
-    // Extract full PDF text
-    let pdf_text = crate::metadata::extract_full_pdf_text(&pdf_url).map_err(|e| {
+    // Download PDF from Supabase Storage
+    let pdf_bytes = state
+        .storage
+        .download_file("uploads", &pdf_path)
+        .await
+        .map_err(|e| {
+            eprintln!("PDF download error: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "Failed to download PDF from storage"})),
+            )
+        })?;
+
+    // Extract full PDF text from downloaded bytes
+    let pdf_text = crate::metadata::extract_full_pdf_text(&pdf_bytes).map_err(|e| {
         eprintln!("PDF extraction error: {}", e);
         (
             StatusCode::INTERNAL_SERVER_ERROR,

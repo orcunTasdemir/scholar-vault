@@ -301,8 +301,7 @@ export default function SubscriptionPage() {
           {/* 30-Day Trial Info */}
           <div className="mt-8 p-4 bg-old-paper-yellow/10 border border-old-paper-yellow/30 rounded-lg backdrop-blur-sm">
             <p className="text-old-paper-yellow text-center font-medium">
-              Researcher tier includes a 30-day free trial. Card required - you
-              won&apos;t be charged until the trial ends. Cancel anytime.
+              <strong>Researcher tier:</strong> Start your 30-day free trial when you upgrade. Card required - you won&apos;t be charged until the trial ends. Cancel anytime during the trial.
             </p>
           </div>
         </div>

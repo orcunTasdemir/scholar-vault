@@ -180,6 +180,36 @@ impl SupabaseStorage {
 }
 
 
+    /// Download a file from Supabase Storage using a signed URL
+    /// Returns the file bytes
+    pub async fn download_file(&self, bucket: &str, path: &str) -> Result<Vec<u8>, String> {
+        // Generate a signed URL with 1 hour expiration
+        let signed_url = self.create_signed_url(bucket, path, 3600).await?;
+
+        // Download the file using the signed URL
+        let response = self
+            .client
+            .get(&signed_url)
+            .send()
+            .await
+            .map_err(|e| format!("Download request failed: {}", e))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(format!("Download failed: {}", error_text));
+        }
+
+        let bytes = response
+            .bytes()
+            .await
+            .map_err(|e| format!("Failed to read response bytes: {}", e))?;
+
+        Ok(bytes.to_vec())
+    }
+
     /// Delete a file from Supabase Storage
     pub async fn delete_file(&self, bucket: &str, path: &str) -> Result<(), String> {
         let delete_url = format!("{}/storage/v1/object/{}/{}", self.url, bucket, path);

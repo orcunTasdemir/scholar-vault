@@ -63,7 +63,7 @@ export default function AppHeader({
       }
 
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("auth_token");
         if (!token) {
           setProfileImageSignedUrl(null);
           return;

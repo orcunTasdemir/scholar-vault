@@ -1,8 +1,5 @@
 import Image from "next/image";
 
-// Base URL for Supabase Storage
-const SUPABASE_BASE_URL = "https://svbfqpzzlhkczcahgdvf.supabase.co/storage/v1/object/public/uploads/static/login-papers";
-
 const paperImages = [
   "1cab2f46-8e0f-4ef6-bc5e-9ac297f485da.png-02.png",
   "1d93934c-9bcd-4c7b-8955-5ae93567dfe4.png-02.png",
@@ -50,7 +47,7 @@ export function AnimatedPaperBackground() {
                     }}
                   >
                     <Image
-                      src={`${SUPABASE_BASE_URL}/${paperImages[i % paperImages.length]}`}
+                      src={`/papers/${paperImages[i % paperImages.length]}`}
                       alt="Academic paper"
                       fill
                       className="object-contain"
@@ -76,7 +73,7 @@ export function AnimatedPaperBackground() {
                     }}
                   >
                     <Image
-                      src={`${SUPABASE_BASE_URL}/${paperImages[i % paperImages.length]}`}
+                      src={`/papers/${paperImages[i % paperImages.length]}`}
                       alt="Academic paper"
                       fill
                       className="object-contain"
@@ -107,7 +104,7 @@ export function AnimatedPaperBackground() {
                     }}
                   >
                     <Image
-                      src={`${SUPABASE_BASE_URL}/${paperImages[i % paperImages.length]}`}
+                      src={`/papers/${paperImages[i % paperImages.length]}`}
                       alt="Academic paper"
                       fill
                       className="object-contain"
@@ -133,7 +130,7 @@ export function AnimatedPaperBackground() {
                     }}
                   >
                     <Image
-                      src={`${SUPABASE_BASE_URL}/${paperImages[i % paperImages.length]}`}
+                      src={`/papers/${paperImages[i % paperImages.length]}`}
                       alt="Academic paper"
                       fill
                       className="object-contain"
@@ -168,7 +165,7 @@ export function AnimatedPaperBackground() {
                     }}
                   >
                     <Image
-                      src={`${SUPABASE_BASE_URL}/${paperImages[i % paperImages.length]}`}
+                      src={`/papers/${paperImages[i % paperImages.length]}`}
                       alt="Academic paper"
                       fill
                       className="object-contain"
@@ -194,7 +191,7 @@ export function AnimatedPaperBackground() {
                     }}
                   >
                     <Image
-                      src={`${SUPABASE_BASE_URL}/${paperImages[i % paperImages.length]}`}
+                      src={`/papers/${paperImages[i % paperImages.length]}`}
                       alt="Academic paper"
                       fill
                       className="object-contain"
@@ -225,7 +222,7 @@ export function AnimatedPaperBackground() {
                     }}
                   >
                     <Image
-                      src={`${SUPABASE_BASE_URL}/${paperImages[i % paperImages.length]}`}
+                      src={`/papers/${paperImages[i % paperImages.length]}`}
                       alt="Academic paper"
                       fill
                       className="object-contain"
@@ -251,7 +248,7 @@ export function AnimatedPaperBackground() {
                     }}
                   >
                     <Image
-                      src={`${SUPABASE_BASE_URL}/${paperImages[i % paperImages.length]}`}
+                      src={`/papers/${paperImages[i % paperImages.length]}`}
                       alt="Academic paper"
                       fill
                       className="object-contain"

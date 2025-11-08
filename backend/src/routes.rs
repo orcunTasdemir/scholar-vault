@@ -47,6 +47,14 @@ pub fn create_routes(state: AppState) -> Router {
             post(handlers::chat_with_document),
         )
         .route(
+            "/api/documents/{id}/signed-url",
+            get(handlers::get_document_signed_url),
+        )
+        .route(
+            "/api/user/profile-image/signed-url",
+            get(handlers::get_profile_image_signed_url),
+        )
+        .route(
             "/api/subscriptions/checkout",
             post(subscription_handlers::create_checkout_session),
         )

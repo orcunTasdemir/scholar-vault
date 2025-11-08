@@ -9,12 +9,6 @@ pub struct SupabaseStorage {
     client: reqwest::Client,
 }
 
-#[derive(Deserialize)]
-struct UploadResponse {
-    #[serde(rename = "Key")]
-    key: String,
-}
-
 #[derive(Serialize)]
 struct SignedUrlRequest {
     #[serde(rename = "expiresIn")]

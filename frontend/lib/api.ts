@@ -400,6 +400,30 @@ class ApiClient {
             throw new Error('Failed to cancel subscription');
         }
     }
+    async getDocumentSignedUrl(token: string, documentId: string): Promise<string> {
+        const response = await fetch(`${API_BASE_URL}/api/documents/${documentId}/signed-url`, {
+            headers: this.getHeaders(token),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to get signed URL');
+        }
+        const data = await response.json();
+        return data.signed_url;
+    }
+
+    async getProfileImageSignedUrl(token: string): Promise<string> {
+        const response = await fetch(`${API_BASE_URL}/api/user/profile-image/signed-url`, {
+            headers: this.getHeaders(token),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to get signed URL');
+        }
+        const data = await response.json();
+        return data.signed_url;
+    }
+
 }
 
 export const api = new ApiClient();

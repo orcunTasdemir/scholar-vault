@@ -41,6 +41,7 @@ export default function DocumentDetailPage() {
     "APA" | "MLA" | "Chicago" | "IEEE" | "BibTeX"
   >("APA");
   const [generatedCitation, setGeneratedCitation] = useState("");
+  const [pdfSignedUrl, setPdfSignedUrl] = useState<string | null>(null);
 
   const documentId = params.id as string;
 
@@ -75,6 +76,25 @@ export default function DocumentDetailPage() {
     };
     fetchDocument();
   }, [token, documentId]);
+
+  useEffect(() => {
+    const fetchPdfSignedUrl = async () => {
+      if (!token || !document?.id || !document.pdf_url) {
+        setPdfSignedUrl(null);
+        return;
+      }
+
+      try {
+        const signedUrl = await api.getDocumentSignedUrl(token, document.id);
+        setPdfSignedUrl(signedUrl);
+      } catch (error) {
+        console.error("Failed to get signed URL:", error);
+        toast.error("Failed to load PDF");
+      }
+    };
+
+    fetchPdfSignedUrl();
+  }, [token, document?.id, document?.pdf_url]);
 
   const generateCitation = useCallback(
     (format: typeof citationFormat): string => {
@@ -487,7 +507,7 @@ export default function DocumentDetailPage() {
                         </button>
 
                         <a
-                          href={`${API_BASE_URL}/${document.pdf_url}`}
+                          href={pdfSignedUrl || "#"}
                           download
                           className="w-full inline-block text-center px-4 py-2 bg-off-white/10 hover:bg-off-white/20 text-off-white border border-off-white/30 font-semibold rounded-lg transition-colors text-sm"
                         >
@@ -660,7 +680,7 @@ export default function DocumentDetailPage() {
                         </button>
 
                         <a
-                          href={`${API_BASE_URL}/${document.pdf_url}`}
+                          href={pdfSignedUrl || "#"}
                           download
                           className="inline-block px-6 py-3 bg-off-white/10 hover:bg-off-white/20 text-off-white border border-off-white/30 font-semibold rounded-lg transition-colors text-base"
                         >
@@ -785,7 +805,7 @@ export default function DocumentDetailPage() {
               }}
             >
               <iframe
-                src={`${API_BASE_URL}/${document.pdf_url}`}
+                src={pdfSignedUrl || ""}
                 className="w-full h-full border border-muted-teal/30 rounded-lg bg-white"
                 title="PDF Viewer"
               />

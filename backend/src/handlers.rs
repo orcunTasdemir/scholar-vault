@@ -591,7 +591,7 @@ pub async fn upload_pdf(
     };
 
     // Clean up temp file
-    let _ = tokio::fs::remove_file(&temp_path).await;
+    let _ = tokio::fs::remove_file(&temp_file_path).await;
 
     // Set the PDF path (Supabase path, not temp path)
     metadata.pdf_url = Some(file_path);
@@ -674,17 +674,7 @@ pub async fn upload_profile_image(
 
     let file_extension = file_extension.unwrap();
 
-    // Create uploads/profile_images directory if it doesn't exist
-    tokio::fs::create_dir_all("uploads/profile_images")
-        .await
-        .map_err(|e| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error": format!("Failed to create upload directory: {}", e)})),
-            )
-        })?;
-
-    // Delete old profile image if it exists
+    // Delete old profile image from Supabase if it exists
     let old_user = sqlx::query_as!(
         User,
         r#"SELECT id, email, password_hash, username, profile_image_url, created_at, updated_at,
@@ -703,26 +693,36 @@ pub async fn upload_profile_image(
     })?;
 
     if let Some(old_image_url) = old_user.profile_image_url {
-        // Delete old file from disk (ignore errors if file doesn't exist)
-        let _ = tokio::fs::remove_file(&old_image_url).await;
+        // Delete old file from Supabase (ignore errors if file doesn't exist)
+        let _ = state.storage.delete_file("uploads", &old_image_url).await;
     }
 
     // Generate unique filename
     let file_id = uuid::Uuid::new_v4();
     let stored_filename = format!("{}_{}.{}", user_id, file_id, file_extension);
-    let upload_path = format!("uploads/profile_images/{}", stored_filename);
+    let upload_path = format!("profile_images/{}", stored_filename);
 
-    // Write to disk
-    tokio::fs::write(&upload_path, &file_data)
+    // Determine content type
+    let content_type = match file_extension.as_str() {
+        "jpg" | "jpeg" => "image/jpeg",
+        "png" => "image/png",
+        "webp" => "image/webp",
+        _ => "application/octet-stream",
+    };
+
+    // Upload to Supabase
+    state
+        .storage
+        .upload_file("uploads", &upload_path, file_data, content_type)
         .await
         .map_err(|e| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error": format!("Failed to save file: {}", e)})),
+                Json(json!({"error": format!("Failed to upload file to storage: {}", e)})),
             )
         })?;
 
-    // Update user's profile_image_url in database
+    // Update user's profile_image_url in database (store the path within the bucket)
     let updated_user = sqlx::query_as!(
         User,
         r#"UPDATE users SET profile_image_url = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, password_hash, username, profile_image_url, created_at, updated_at,
@@ -778,10 +778,10 @@ pub async fn delete_profile_image(
         )
     })?;
 
-    // Delete file from disk if it exists
+    // Delete file from Supabase if it exists
     if let Some(image_url) = user.profile_image_url {
         // Ignore error if file doesn't exist
-        let _ = tokio::fs::remove_file(&image_url).await;
+        let _ = state.storage.delete_file("uploads", &image_url).await;
     }
 
     // Update database to set profile_image_url to NULL
@@ -1510,4 +1510,115 @@ pub async fn chat_with_document(
     Ok(Json(ChatResponse {
         response: ai_response,
     }))
+}
+
+// Get signed URL for a document PDF
+pub async fn get_document_signed_url(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+    Path(document_id): Path<uuid::Uuid>,
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    // Fetch document and verify ownership
+    let document = sqlx::query_as!(
+        Document,
+        r#"
+        SELECT id, user_id, title, authors, year, publication_type, journal,
+               volume, issue, pages, publisher, doi, url, abstract_text,
+               keywords, pdf_url, created_at, updated_at
+        FROM documents
+        WHERE id = $1 AND user_id = $2
+        "#,
+        document_id,
+        user_id
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Database error"})),
+        )
+    })?
+    .ok_or((
+        StatusCode::NOT_FOUND,
+        Json(json!({"error": "Document not found"})),
+    ))?;
+
+    let pdf_path = document.pdf_url.ok_or((
+        StatusCode::NOT_FOUND,
+        Json(json!({"error": "Document has no PDF"})),
+    ))?;
+
+    // Generate signed URL (1 hour expiration)
+    let signed_url = state
+        .storage
+        .create_signed_url("uploads", &pdf_path, 3600)
+        .await
+        .map_err(|e| {
+            eprintln!("Failed to create signed URL: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "Failed to generate signed URL"})),
+            )
+        })?;
+
+    Ok(Json(json!({"signed_url": signed_url})))
+}
+
+// Get signed URL for user's profile image
+pub async fn get_profile_image_signed_url(
+    AuthUser(claims): AuthUser,
+    State(state): State<AppState>,
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Invalid user ID"})),
+        )
+    })?;
+
+    // Fetch user
+    let user = sqlx::query_as!(
+        User,
+        r#"SELECT id, email, password_hash, username, profile_image_url, created_at, updated_at,
+           subscription_tier, subscription_status, stripe_customer_id, stripe_subscription_id,
+           subscription_start_date, subscription_end_date, trial_end_date
+           FROM users WHERE id = $1"#,
+        user_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "User not found"})),
+        )
+    })?;
+
+    let image_path = user.profile_image_url.ok_or((
+        StatusCode::NOT_FOUND,
+        Json(json!({"error": "User has no profile image"})),
+    ))?;
+
+    // Generate signed URL (1 hour expiration)
+    let signed_url = state
+        .storage
+        .create_signed_url("uploads", &image_path, 3600)
+        .await
+        .map_err(|e| {
+            eprintln!("Failed to create signed URL: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "Failed to generate signed URL"})),
+            )
+        })?;
+
+    Ok(Json(json!({"signed_url": signed_url})))
 }

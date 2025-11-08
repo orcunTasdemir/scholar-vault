@@ -16,8 +16,7 @@ import {
 import { Search, Upload, FolderPlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://10.0.0.53:3000";
+import { api } from "@/lib/api";
 
 interface AppHeaderProps {
   user: {
@@ -45,6 +44,7 @@ export default function AppHeader({
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchInAllDocs, setSearchInAllDocs] = useState(false);
+  const [profileImageSignedUrl, setProfileImageSignedUrl] = useState<string | null>(null);
 
   // Add debounced search value
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -53,6 +53,32 @@ export default function AppHeader({
   const effectiveSearchInAllDocs = selectedCollectionId
     ? searchInAllDocs
     : false;
+
+  // Fetch profile image signed URL when user has a profile image
+  useEffect(() => {
+    const fetchProfileImageSignedUrl = async () => {
+      if (!user.profile_image_url) {
+        setProfileImageSignedUrl(null);
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setProfileImageSignedUrl(null);
+          return;
+        }
+
+        const signedUrl = await api.getProfileImageSignedUrl(token);
+        setProfileImageSignedUrl(signedUrl);
+      } catch (error) {
+        console.error("Failed to get profile image signed URL:", error);
+        setProfileImageSignedUrl(null);
+      }
+    };
+
+    fetchProfileImageSignedUrl();
+  }, [user.profile_image_url]);
 
   // Effect to trigger search when debounced value changes
   useEffect(() => {
@@ -177,9 +203,9 @@ export default function AppHeader({
                 className="relative rounded-full p-0.5 hover:bg-gray-100 border-none bg-muted-teal"
                 aria-label="Open user menu"
               >
-                {user.profile_image_url ? (
+                {profileImageSignedUrl ? (
                   <Image
-                    src={`${API_BASE_URL}/${user.profile_image_url}`}
+                    src={profileImageSignedUrl}
                     alt={user.username || "User"}
                     width={32}
                     height={32}

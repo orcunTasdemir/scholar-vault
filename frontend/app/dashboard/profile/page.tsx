@@ -7,14 +7,13 @@ import { api } from "@/lib/api";
 import Image from "next/image";
 import DocumentHeader from "@/components/layout/DocumentHeader";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://10.0.0.53:3000";
-
 export default function ProfilePage() {
   const router = useRouter();
   const { user, token, isLoading, logout, setUser } = useAuth();
 
   const [username, setUsername] = useState("");
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileImageSignedUrl, setProfileImageSignedUrl] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [message, setMessage] = useState("");
@@ -32,6 +31,26 @@ export default function ProfilePage() {
       setProfileImage(user.profile_image_url);
     }
   }, [user]);
+
+  // Fetch profile image signed URL when profile image changes
+  useEffect(() => {
+    const fetchProfileImageSignedUrl = async () => {
+      if (!profileImage || !token) {
+        setProfileImageSignedUrl(null);
+        return;
+      }
+
+      try {
+        const signedUrl = await api.getProfileImageSignedUrl(token);
+        setProfileImageSignedUrl(signedUrl);
+      } catch (error) {
+        console.error("Failed to get profile image signed URL:", error);
+        setProfileImageSignedUrl(null);
+      }
+    };
+
+    fetchProfileImageSignedUrl();
+  }, [profileImage, token]);
 
   if (isLoading || !user) {
     return (
@@ -163,9 +182,9 @@ export default function ProfilePage() {
             </h2>
             <div className="flex items-start gap-6">
               <div className="shrink-0">
-                {profileImage ? (
+                {profileImageSignedUrl ? (
                   <Image
-                    src={`${API_BASE_URL}/${profileImage}`}
+                    src={profileImageSignedUrl}
                     alt="Profile"
                     width={120}
                     height={120}

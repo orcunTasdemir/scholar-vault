@@ -21,6 +21,11 @@ const nextConfig: NextConfig = {
         hostname: '*.fly.dev',
         pathname: '/uploads/**',
       },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/**',
+      },
     ],
   },
 };

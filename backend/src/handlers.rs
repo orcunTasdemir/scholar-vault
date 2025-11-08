@@ -487,6 +487,7 @@ pub async fn upload_pdf(
     // Extract the file field from multipart
     let mut file_name: Option<String> = None;
     let mut file_path: Option<String> = None;
+    let mut temp_path: Option<String> = None;
 
     while let Some(field) = multipart.next_field().await.map_err(|e| {
         (
@@ -507,10 +508,9 @@ pub async fn upload_pdf(
                 ));
             }
 
-            // Generate unique filename
-            let file_id = uuid::Uuid::new_v4();
-            let stored_filename = format!("{}_{}", file_id, original_filename);
-            let upload_path = format!("uploads/{}", stored_filename);
+            // Generate unique filename with user prefix
+            let stored_filename = crate::storage::SupabaseStorage::generate_filename(&original_filename);
+            let upload_path = format!("pdfs/{}/{}", user_id, stored_filename);
 
             // Read file bytes
             let data = field.bytes().await.map_err(|e| {
@@ -520,16 +520,32 @@ pub async fn upload_pdf(
                 )
             })?;
 
-            // Write to disk
-            tokio::fs::write(&upload_path, &data).await.map_err(|e| {
+            // Save temporarily for metadata extraction
+            let temp_file_path = format!("/tmp/{}", stored_filename);
+            tokio::fs::write(&temp_file_path, &data).await.map_err(|e| {
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({"error": format!("Failed to save file: {}", e)})),
+                    Json(json!({"error": format!("Failed to write temporary file: {}", e)})),
                 )
             })?;
 
+            // Upload to Supabase
+            let supabase_path = state
+                .storage
+                .upload_file("uploads", &upload_path, data.to_vec(), "application/pdf")
+                .await
+                .map_err(|e| {
+                    // Clean up temp file on error
+                    let _ = std::fs::remove_file(&temp_file_path);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({"error": format!("Failed to upload file to storage: {}", e)})),
+                    )
+                })?;
+
             file_name = Some(original_filename);
-            file_path = Some(upload_path);
+            file_path = Some(supabase_path);
+            temp_path = Some(temp_file_path);
             break;
         }
     }
@@ -542,10 +558,10 @@ pub async fn upload_pdf(
     })?;
 
     let file_name = file_name.unwrap_or_else(|| "unknown.pdf".to_string());
+    let temp_file_path = temp_path.unwrap_or_else(|| "/tmp/unknown.pdf".to_string());
 
-    // TODO: AI metadata extraction
-
-    let mut metadata = match crate::metadata::extract_metadata_from_pdf(&file_path).await {
+    // Extract metadata from temp file
+    let mut metadata = match crate::metadata::extract_metadata_from_pdf(&temp_file_path).await {
         Ok(metadata) => {
             println!("Metadata extraction successful!");
             metadata
@@ -574,7 +590,10 @@ pub async fn upload_pdf(
         }
     };
 
-    // Set the PDF path
+    // Clean up temp file
+    let _ = tokio::fs::remove_file(&temp_path).await;
+
+    // Set the PDF path (Supabase path, not temp path)
     metadata.pdf_url = Some(file_path);
 
     let document = create_document_internal(&state, user_id, metadata).await?;

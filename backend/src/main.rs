@@ -6,6 +6,7 @@ mod middleware;
 mod models;
 mod routes;
 mod state;
+mod storage;
 mod subscription_handlers;
 
 use config::Config;

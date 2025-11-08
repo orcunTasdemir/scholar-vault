@@ -8,6 +8,8 @@ pub struct Config {
     pub stripe_secret_key: String,
     pub stripe_webhook_secret: String,
     pub stripe_publishable_key: String,
+    pub supabase_url: String,
+    pub supabase_service_role_key: String,
 }
 
 impl Config {
@@ -23,6 +25,10 @@ impl Config {
             std::env::var("STRIPE_WEBHOOK_SECRET").expect("STRIPE_WEBHOOK_SECRET must be set");
         let stripe_publishable_key =
             std::env::var("STRIPE_PUBLISHABLE_KEY").expect("STRIPE_PUBLISHABLE_KEY must be set");
+        let supabase_url =
+            std::env::var("SUPABASE_URL").expect("SUPABASE_URL must be set");
+        let supabase_service_role_key =
+            std::env::var("SUPABASE_SERVICE_ROLE_KEY").expect("SUPABASE_SERVICE_ROLE_KEY must be set");
 
         Self {
             database_url,
@@ -30,6 +36,8 @@ impl Config {
             stripe_secret_key,
             stripe_webhook_secret,
             stripe_publishable_key,
+            supabase_url,
+            supabase_service_role_key,
         }
     }
     pub async fn create_pool(&self) -> Result<PgPool, sqlx::Error> {
